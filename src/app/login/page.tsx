@@ -4,12 +4,11 @@ import type React from "react"
 import { Button } from "@/components/ui/button"
 import { useState, useEffect } from "react"
 import { signIn } from "next-auth/react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Suspense } from "react"
 
 // Create a separate component that uses useSearchParams
 function LoginForm() {
-  const { useSearchParams } = require("next/navigation")
   const searchParams = useSearchParams()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
