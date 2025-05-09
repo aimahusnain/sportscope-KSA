@@ -286,7 +286,7 @@ export default function InteractiveSaudiMap() {
         </div>
 
         {/* Legend */}
-        <div className="mt-4 grid grid-cols-2 md:grid-cols-1 lg:grid-cols-1 gap-2">
+        <div className="mt-4 md:flex flex-col gap-3 grid grid-cols-2">
           {Object.entries(regionNames).map(([id, name]) => (
             <div key={id} className="flex items-center gap-2">
               <div
