@@ -2,27 +2,17 @@
 
 import type React from "react"
 import { Button } from "@/components/ui/button"
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { signIn } from "next-auth/react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useRouter } from "next/navigation"
 import { Suspense } from "react"
 
-// Create a separate component that uses useSearchParams
 function LoginForm() {
-  const searchParams = useSearchParams()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
-  const callbackUrl = searchParams?.get("callbackUrl") || "/"
-  const errorParam = searchParams?.get("error")
-
-  useEffect(() => {
-    if (errorParam) {
-      setError("Authentication failed. Please check your credentials and try again.")
-    }
-  }, [errorParam])
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -36,7 +26,6 @@ function LoginForm() {
         email,
         password,
         redirect: false,
-        callbackUrl,
       })
 
       console.log("Sign in result:", result)
@@ -47,11 +36,8 @@ function LoginForm() {
         return
       }
 
-      if (result?.url) {
-        router.push(result.url)
-      } else {
-        router.push(callbackUrl)
-      }
+      // Success - Go to home page after successful login
+      router.push("/")
     } catch (error) {
       console.error("Login error:", error)
       setError("Something went wrong. Please try again.")

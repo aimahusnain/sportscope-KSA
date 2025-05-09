@@ -1,12 +1,11 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { usePathname, useSearchParams } from "next/navigation"
+import { usePathname } from "next/navigation"
 
 export default function Loader() {
   const [isLoading, setIsLoading] = useState(false)
   const pathname = usePathname()
-  const searchParams = useSearchParams()
 
   useEffect(() => {
     // Function to handle route change start
@@ -43,10 +42,10 @@ export default function Loader() {
     }
   }, [])
 
-  // Route change has completed when these change
+  // Route change has completed when pathname changes
   useEffect(() => {
     setIsLoading(false)
-  }, [pathname, searchParams])
+  }, [pathname])
 
   if (!isLoading) return null
 
