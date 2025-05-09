@@ -66,11 +66,11 @@ export default function RadialMenu() {
       <div className="container z-50 relative">
         <div className="row">
           {/* Radial menu container */}
-          <div className="radial fixed w-24 h-24 right-6 bottom-6 bg-lime-500 rounded-full transition-all duration-500 shadow-md">
+          <div className="radial fixed w-24 h-24 left-6 bottom-6 bg-lime-500 rounded-full transition-all duration-500 shadow-md">
             {/* Menu buttons */}
             <button
               id="fa-1"
-              className="fixed right-[60px] bottom-[57px] bg-transparent border-0 text-white flex items-center justify-center p-0 m-0 transition-all duration-500 hover:text-lime-300"
+              className="fixed left-[60px] bottom-[57px] bg-transparent border-0 text-white flex items-center justify-center p-0 m-0 transition-all duration-500 hover:text-lime-300"
             >
               <Send size={48} />
             </button>
@@ -79,7 +79,7 @@ export default function RadialMenu() {
             <button
               id="fa-2"
               onClick={handleThemeToggle}
-              className="fixed right-[60px] bottom-[57px] bg-transparent border-0 text-white flex items-center justify-center p-0 m-0 transition-all duration-500 hover:text-lime-300"
+              className="fixed left-[60px] bottom-[57px] bg-transparent border-0 text-white flex items-center justify-center p-0 m-0 transition-all duration-500 hover:text-lime-300"
               aria-label="Toggle theme"
             >
               {mounted &&
@@ -92,13 +92,13 @@ export default function RadialMenu() {
 
             <button
               id="fa-3"
-              className="fixed right-[60px] bottom-[57px] bg-transparent border-0 text-white flex items-center justify-center p-0 m-0 transition-all duration-500 hover:text-lime-300"
+              className="fixed left-[60px] bottom-[57px] bg-transparent border-0 text-white flex items-center justify-center p-0 m-0 transition-all duration-500 hover:text-lime-300"
             >
               <Search size={48} />
             </button>
 
             {/* Main button */}
-            <button className="fab fixed w-24 h-24 right-6 bottom-6 bg-lime-500 text-white rounded-full border-0 transition-all duration-500 hover:bg-lime-700">
+            <button className="fab fixed w-24 h-24 left-6 bottom-6 bg-lime-500 text-white rounded-full border-0 transition-all duration-500 hover:bg-lime-700">
               <div
                 id="plus"
                 className="flex justify-center mt-2 transition-all duration-500"
@@ -123,7 +123,7 @@ export default function RadialMenu() {
         .radial.open {
           height: 400px;
           width: 400px;
-          right: -125px;
+          left: -125px;
           bottom: -125px;
         }
         .radial.open .fab {
@@ -136,15 +136,15 @@ export default function RadialMenu() {
         }
         .radial.open #fa-1 {
           transition-delay: 0s;
-          transform: translate(-110px, 10px);
+          transform: translate(110px, 10px);
         }
         .radial.open #fa-2 {
           transition-delay: 0.1s;
-          transform: translate(-85px, -85px);
+          transform: translate(85px, -85px);
         }
         .radial.open #fa-3 {
           transition-delay: 0.2s;
-          transform: translate(10px, -110px);
+          transform: translate(-10px, -110px);
         }
       `}</style>
     </>
