@@ -1,9 +1,11 @@
+// app/_not-found/page.js (if you have this file)
 "use client"
 
-import Link from "next/link"
 import { Suspense } from "react"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 
+// Component that doesn't use any client hooks
 function NotFoundContent() {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen px-6 py-12 bg-white dark:bg-zinc-900">
@@ -23,7 +25,7 @@ function NotFoundContent() {
   )
 }
 
-export default function NotFound() {
+export default function NotFoundPage() {
   return (
     <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
       <NotFoundContent />
