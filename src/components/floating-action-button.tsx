@@ -9,17 +9,23 @@ import {
   Sun as SunIcon,
 } from "lucide-react";
 import { useTheme } from "next-themes";
+import { usePathname } from "next/navigation";
 
 export default function RadialMenu() {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
-
+  const pathname = usePathname();
+  
   // Avoid hydration mismatch
   useEffect(() => {
     setMounted(true);
   }, []);
-
+  
+  // Setup radial menu functionality
   useEffect(() => {
+    // Don't set up event handlers if we're not on the home page
+    if (pathname !== "/") return;
+    
     // Function to toggle the radial menu open/closed
     const handleFabClick = () => {
       const radialElement = document.querySelector(".radial");
@@ -49,7 +55,7 @@ export default function RadialMenu() {
         item?.removeEventListener("click", handleMenuItemClick);
       });
     };
-  }, []);
+  }, [pathname]); // Add pathname as dependency
 
   // Toggle theme and close menu
   const handleThemeToggle = (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -60,6 +66,9 @@ export default function RadialMenu() {
     radialElement?.classList.remove("open");
     console.log("Theme toggled to:", theme === "dark" ? "light" : "dark");
   };
+
+  // Early return after all hooks have been called
+  if (pathname !== "/") return null;
 
   return (
     <>
