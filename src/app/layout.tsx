@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "next-themes";
-import 'leaflet/dist/leaflet.css';
 import FloatingActionButton from "@/components/floating-action-button";
 
 const geistSans = Geist({
