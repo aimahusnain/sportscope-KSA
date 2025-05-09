@@ -148,7 +148,7 @@ export default function InteractiveSaudiMap() {
               tabIndex={0}
               aria-label="Ḩā'il region"
             >
-              <title>Ḩā'il</title>
+              <title>Ḩā&apos;il</title>
             </path>
             <path
               id="SA-07"
@@ -224,7 +224,7 @@ export default function InteractiveSaudiMap() {
               tabIndex={0}
               aria-label="Asir region"
             >
-              <title>'Asir</title>
+              <title>&apos;Asir</title>
             </path>
           </g>
         </svg>
