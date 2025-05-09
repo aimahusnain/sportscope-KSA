@@ -1,19 +1,21 @@
 "use client"
 
 import type React from "react"
-
 import { Button } from "@/components/ui/button"
 import { useState, useEffect } from "react"
 import { signIn } from "next-auth/react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useRouter } from "next/navigation"
+import { Suspense } from "react"
 
-export default function LoginPage() {
+// Create a separate component that uses useSearchParams
+function LoginForm() {
+  const { useSearchParams } = require("next/navigation")
+  const searchParams = useSearchParams()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
-  const searchParams = useSearchParams()
   const callbackUrl = searchParams?.get("callbackUrl") || "/"
   const errorParam = searchParams?.get("error")
 
@@ -58,7 +60,49 @@ export default function LoginPage() {
     }
   }
 
+  return (
+    <form onSubmit={handleSubmit}>
+      {/* Email Field */}
+      <div className="mb-4">
+        <input
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="email@example.com"
+          className="w-full p-3 border-b border-zinc-300 dark:border-zinc-700 focus:border-lime-700 dark:focus:border-lime-500 focus:outline-none bg-transparent text-zinc-900 dark:text-white placeholder-zinc-500 dark:placeholder-zinc-400"
+          required
+        />
+      </div>
+
+      {/* Password Field */}
+      <div className="mb-6">
+        <input
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="Password"
+          className="w-full p-3 border-b border-zinc-300 dark:border-zinc-700 focus:border-lime-700 dark:focus:border-lime-500 focus:outline-none bg-transparent text-zinc-900 dark:text-white placeholder-zinc-500 dark:placeholder-zinc-400"
+          required
+        />
+      </div>
+
+      {error && <div className="mb-4 text-red-500 dark:text-red-400 text-sm">{error}</div>}
+
+      {/* Login Button */}
+      <Button
+        type="submit"
+        className="w-full font-medium py-6 cursor-pointer rounded mb-4 text-white bg-lime-600 hover:bg-lime-700 dark:bg-lime-700 dark:hover:bg-lime-600"
+        disabled={isLoading}
+      >
+        {isLoading ? "Logging in..." : "Login Now"}
+      </Button>
+    </form>
+  )
+}
+
+export default function LoginPage() {
   const year = new Date().getFullYear()
+  
   return (
     <div className="flex h-screen w-full bg-white dark:bg-zinc-900">
       {/* Left Side - lime Background */}
@@ -110,42 +154,9 @@ export default function LoginPage() {
             <p className="text-zinc-600 dark:text-zinc-400">Important to verify yourself before you can start using the app.</p>
           </div>
 
-          <form onSubmit={handleSubmit}>
-            {/* Email Field */}
-            <div className="mb-4">
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="email@example.com"
-                className="w-full p-3 border-b border-zinc-300 dark:border-zinc-700 focus:border-lime-700 dark:focus:border-lime-500 focus:outline-none bg-transparent text-zinc-900 dark:text-white placeholder-zinc-500 dark:placeholder-zinc-400"
-                required
-              />
-            </div>
-
-            {/* Password Field */}
-            <div className="mb-6">
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Password"
-                className="w-full p-3 border-b border-zinc-300 dark:border-zinc-700 focus:border-lime-700 dark:focus:border-lime-500 focus:outline-none bg-transparent text-zinc-900 dark:text-white placeholder-zinc-500 dark:placeholder-zinc-400"
-                required
-              />
-            </div>
-
-            {error && <div className="mb-4 text-red-500 dark:text-red-400 text-sm">{error}</div>}
-
-            {/* Login Button */}
-            <Button
-              type="submit"
-              className="w-full font-medium py-6 cursor-pointer rounded mb-4 text-white bg-lime-600 hover:bg-lime-700 dark:bg-lime-700 dark:hover:bg-lime-600"
-              disabled={isLoading}
-            >
-              {isLoading ? "Logging in..." : "Login Now"}
-            </Button>
-          </form>
+          <Suspense fallback={<div className="text-center py-4">Loading form...</div>}>
+            <LoginForm />
+          </Suspense>
         </div>
       </div>
     </div>
