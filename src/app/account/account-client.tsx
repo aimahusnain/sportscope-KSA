@@ -56,6 +56,7 @@ export default function AccountPageClient({ user }: AccountPageClientProps) {
       toast.error("Error", {
         description: "Failed to update profile. Please try again.",
       })
+      console.log("Error updating profile:", error)
     } finally {
       setIsUpdating(false)
     }
