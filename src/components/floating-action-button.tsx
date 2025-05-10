@@ -1,31 +1,32 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import {
-  Send,
-  Search,
-  Plus,
+  Database,
+  LayoutDashboard,
   Moon as MoonIcon,
-  Sun as SunIcon,
+  Plus,
+  Sun as SunIcon
 } from "lucide-react";
 import { useTheme } from "next-themes";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 
 export default function RadialMenu() {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const pathname = usePathname();
-  
+
   // Avoid hydration mismatch
   useEffect(() => {
     setMounted(true);
   }, []);
-  
+
   // Setup radial menu functionality
   useEffect(() => {
     // Don't set up event handlers if we're not on the home page
     if (pathname !== "/") return;
-    
+
     // Function to toggle the radial menu open/closed
     const handleFabClick = () => {
       const radialElement = document.querySelector(".radial");
@@ -77,12 +78,15 @@ export default function RadialMenu() {
           {/* Radial menu container */}
           <div className="radial fixed w-24 h-24 left-6 bottom-6 bg-lime-500 rounded-full transition-all duration-500 shadow-md">
             {/* Menu buttons */}
-            <button
-              id="fa-1"
-              className="fixed left-[60px] bottom-[57px] bg-transparent border-0 text-white flex items-center justify-center p-0 m-0 transition-all duration-500 hover:text-lime-300"
-            >
-              <Send size={48} />
-            </button>
+            <Link href="/database">
+              <button
+                // href="/database"
+                id="fa-1"
+                className="fixed left-[60px] bottom-[57px] bg-transparent border-0 text-white flex items-center justify-center p-0 m-0 transition-all duration-500 hover:text-lime-300"
+              >
+                <Database size={48} />
+              </button>
+            </Link>
 
             {/* Theme toggle button (replaced Home icon) */}
             <button
@@ -99,12 +103,14 @@ export default function RadialMenu() {
                 ))}
             </button>
 
+              <Link href="/">
             <button
               id="fa-3"
               className="fixed left-[60px] bottom-[57px] bg-transparent border-0 text-white flex items-center justify-center p-0 m-0 transition-all duration-500 hover:text-lime-300"
             >
-              <Search size={48} />
+              <LayoutDashboard size={48} />
             </button>
+              </Link>
 
             {/* Main button */}
             <button className="fab fixed w-24 h-24 left-6 bottom-6 bg-lime-500 text-white rounded-full border-0 transition-all duration-500 hover:bg-lime-700">
