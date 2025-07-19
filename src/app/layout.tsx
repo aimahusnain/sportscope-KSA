@@ -22,6 +22,8 @@ export const metadata: Metadata = {
     "SportScope KSA is an interactive data tool for visualizing sports facility gaps across Saudi Arabia. Designed for planners and decision-makers to support strategic, data-driven infrastructure planning.",
 };
 
+// New Connection Setup!
+
 export default function RootLayout({
   children,
 }: Readonly<{
