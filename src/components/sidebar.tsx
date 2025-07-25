@@ -1,5 +1,4 @@
 "use client";
-
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,35 +20,19 @@ import {
 } from "lucide-react";
 import * as React from "react";
 
-const sports = [
-  "Basketball",
-  "Football",
-  "Handball",
-  "Tennis",
-  "Volleyball",
-  "Swimming",
-  "Athletics",
-  "Gymnastics",
-];
-
-const facilityTypes = [
-  "Indoor Stadium",
-  "Outdoor Field",
-  "Swimming Pool",
-  "Tennis Court",
-  "Gymnasium",
-  "Athletic Track",
-  "Multi-purpose Hall",
-  "Basketball Court",
-];
-
+// Remove the hardcoded facilityTypes array - we'll use the prop instead
 const locationTypes = [
   { value: "Urban", icon: Building, label: "Urban" },
   { value: "Rural", icon: MapPin, label: "Rural" },
 ];
 
-export default function Sidebar() {
-  const [isOpen, setIsOpen] = React.useState(false); // Start closed by default
+type SidebarProps = {
+  sports: { id: string; name: string }[];
+  facilityTypes: { id: string; name: string }[];
+};
+
+export default function Sidebar({ sports, facilityTypes }: SidebarProps) {
+  const [isOpen, setIsOpen] = React.useState(false);
   const [selectedSports, setSelectedSports] = React.useState<string[]>([]);
   const [selectedFacilityTypes, setSelectedFacilityTypes] = React.useState<
     string[]
@@ -63,17 +46,13 @@ export default function Sidebar() {
   React.useEffect(() => {
     const checkScreenSize = () => {
       if (window.innerWidth >= 768) {
-        // md breakpoint
-        setIsOpen(true); // Open on desktop
+        setIsOpen(true);
       } else {
-        setIsOpen(false); // Closed on mobile
+        setIsOpen(false);
       }
     };
 
-    // Check on mount
     checkScreenSize();
-
-    // Check on resize
     window.addEventListener("resize", checkScreenSize);
     return () => window.removeEventListener("resize", checkScreenSize);
   }, []);
@@ -82,17 +61,19 @@ export default function Sidebar() {
     setIsOpen(!isOpen);
   };
 
-  const toggleSport = (sport: string) => {
+  const toggleSport = (sportName: string) => {
     setSelectedSports((prev) =>
-      prev.includes(sport) ? prev.filter((s) => s !== sport) : [...prev, sport]
+      prev.includes(sportName) 
+        ? prev.filter((s) => s !== sportName) 
+        : [...prev, sportName]
     );
   };
 
-  const toggleFacilityType = (facilityType: string) => {
+  const toggleFacilityType = (facilityTypeName: string) => {
     setSelectedFacilityTypes((prev) =>
-      prev.includes(facilityType)
-        ? prev.filter((f) => f !== facilityType)
-        : [...prev, facilityType]
+      prev.includes(facilityTypeName)
+        ? prev.filter((f) => f !== facilityTypeName)
+        : [...prev, facilityTypeName]
     );
   };
 
@@ -108,7 +89,7 @@ export default function Sidebar() {
     if (selectedSports.length === sports.length) {
       setSelectedSports([]);
     } else {
-      setSelectedSports([...sports]);
+      setSelectedSports(sports.map(sport => sport.name));
     }
   };
 
@@ -116,7 +97,7 @@ export default function Sidebar() {
     if (selectedFacilityTypes.length === facilityTypes.length) {
       setSelectedFacilityTypes([]);
     } else {
-      setSelectedFacilityTypes([...facilityTypes]);
+      setSelectedFacilityTypes(facilityTypes.map(facilityType => facilityType.name));
     }
   };
 
@@ -136,7 +117,6 @@ export default function Sidebar() {
         size="sm"
         className={`z-[9999] flex items-center gap-2 px-3 py-2 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-900 dark:hover:bg-zinc-800 dark:text-white text-black shadow-lg border-0 transition-all duration-300
           ${
-            // Mobile positioning
             isOpen
               ? "fixed top-20 left-[320px] rounded-l-none rounded-r-md md:absolute md:top-2 md:-right-9 md:rounded-l-none md:rounded-r-md"
               : "fixed top-20 left-4 rounded-md md:absolute md:top-2 md:left-4 md:rounded-md"
@@ -225,12 +205,12 @@ export default function Sidebar() {
                 <DropdownMenuContent className="w-72 max-w-[90vw] max-h-64 overflow-y-auto z-[10000]">
                   {sports.map((sport) => (
                     <DropdownMenuCheckboxItem
-                      key={sport}
-                      checked={selectedSports.includes(sport)}
-                      onCheckedChange={() => toggleSport(sport)}
+                      key={sport.id}
+                      checked={selectedSports.includes(sport.name)}
+                      onCheckedChange={() => toggleSport(sport.name)}
                       className="cursor-pointer text-black dark:text-white"
                     >
-                      {sport}
+                      {sport.name}
                     </DropdownMenuCheckboxItem>
                   ))}
                 </DropdownMenuContent>
@@ -285,12 +265,12 @@ export default function Sidebar() {
                 <DropdownMenuContent className="w-72 max-w-[90vw] max-h-64 overflow-y-auto z-[10000]">
                   {facilityTypes.map((facilityType) => (
                     <DropdownMenuCheckboxItem
-                      key={facilityType}
-                      checked={selectedFacilityTypes.includes(facilityType)}
-                      onCheckedChange={() => toggleFacilityType(facilityType)}
+                      key={facilityType.id}
+                      checked={selectedFacilityTypes.includes(facilityType.name)}
+                      onCheckedChange={() => toggleFacilityType(facilityType.name)}
                       className="cursor-pointer text-black dark:text-white"
                     >
-                      {facilityType}
+                      {facilityType.name}
                     </DropdownMenuCheckboxItem>
                   ))}
                 </DropdownMenuContent>
@@ -374,7 +354,7 @@ export default function Sidebar() {
         </div>
       </div>
 
-      {/* Overlay for mobile only - closes sidebar when clicked */}
+      {/* Overlay for mobile only */}
       {isOpen && (
         <div
           className="fixed inset-0 bg-black/20 z-[9997] md:hidden"
