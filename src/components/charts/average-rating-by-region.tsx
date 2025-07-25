@@ -156,7 +156,7 @@ export function AverageRatingbyRegion() {
   const getChartData = () => {
     if (selectedSports.length === 0) return []
     return saudiRegions.map((region) => {
-      const regionData: any = {
+      const regionData: { region: string; fullRegion: string; [key: string]: string | number } = {
         region: region.length > 8 ? region.slice(0, 8) + "..." : region,
         fullRegion: region,
       }
