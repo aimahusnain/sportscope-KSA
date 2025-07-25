@@ -52,7 +52,7 @@ export default function Loader() {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-white bg-opacity-70 dark:bg-zinc-900 dark:bg-opacity-70 backdrop-blur-sm transition-opacity">
       <div className="flex flex-col items-center space-y-4">
-        <div className="w-16 h-16 border-4 border-lime-600 dark:border-lime-500 border-t-transparent dark:border-t-transparent rounded-full animate-spin"></div>
+        <div className="w-16 h-16 border-6 border-lime-600 dark:border-lime-500 border-t-transparent dark:border-t-transparent rounded-full animate-spin"></div>
         <span className="text-zinc-800 dark:text-zinc-200 font-medium">Loading...</span>
       </div>
     </div>
