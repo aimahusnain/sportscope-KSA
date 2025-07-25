@@ -3,11 +3,11 @@
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import { Bell, Calendar, Search, Menu, X } from "lucide-react"
+import { Bell, Calendar, Menu, Search } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
-import { ThemeToggle } from "./theme-toggler"
 import { useState } from "react"
+import { ThemeToggle } from "./theme-toggler"
 
 export default function Header() {
   const [isOpen, setIsOpen] = useState(false)
@@ -45,13 +45,13 @@ export default function Header() {
           {/* Navigation Links */}
           <nav className="flex items-center space-x-1">
             <Button asChild variant="ghost" size="sm">
-              <Link href="#" className="text-sm font-medium">
+              <Link href="/" className="text-sm font-medium">
                 Dashboard
               </Link>
             </Button>
             <Button asChild variant="ghost" size="sm">
               <Link href="#" className="text-sm font-medium">
-                Exchange
+                Data Manager
               </Link>
             </Button>
             <Button asChild variant="ghost" size="sm">

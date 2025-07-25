@@ -1,14 +1,13 @@
 "use client"
 
-import type React from "react"
 import { Button } from "@/components/ui/button"
-import { useState } from "react"
-import { signIn } from "next-auth/react"
-import { useRouter } from "next/navigation"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { signIn } from "next-auth/react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
+import type React from "react"
+import { useState } from "react"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
