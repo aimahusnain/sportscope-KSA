@@ -14,7 +14,6 @@ export default async function FilterSidebar() {
   
   return (
     <div className="min-h-screen bg-background">
-      <Header />
       <div className="flex">
         {/* Pass both sports and facility types data as props to the client component */}
         <Sidebar sports={sports} facilityTypes={facilityTypes} />

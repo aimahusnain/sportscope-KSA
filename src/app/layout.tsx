@@ -4,6 +4,8 @@ import type { Metadata } from "next";
 import { ThemeProvider } from "next-themes";
 import { Geist, Geist_Mono, Poppins } from "next/font/google";
 import "./globals.css";
+import Header from "@/components/header";
+import { Toaster } from "sonner"
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -33,13 +35,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${poppins.variable} antialiased bg-zinc-50 dark:bg-zinc-900`}
+        className={`${geistSans.variable} ${geistMono.variable} ${poppins.variable} antialiased bg-zinc-50 dark:bg-background/95`}
       >
         <NextAuthProvider>
           <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
             <Loader />
+            <Header />
+                      <Toaster />
             {children}
           </ThemeProvider>
         </NextAuthProvider>
