@@ -162,7 +162,7 @@ export default function Header() {
                         className="justify-start h-12 text-base px-4 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800"
                         onClick={() => setIsOpen(false)}
                       >
-                        <Link href="#">Dashboard</Link>
+                        <Link href="/">Dashboard</Link>
                       </Button>
                       <Button
                         asChild
@@ -170,7 +170,7 @@ export default function Header() {
                         className="justify-start h-12 text-base px-4 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800"
                         onClick={() => setIsOpen(false)}
                       >
-                        <Link href="#">Exchange</Link>
+                        <Link href="/data-manager">Data Manager</Link>
                       </Button>
                       <Button
                         asChild

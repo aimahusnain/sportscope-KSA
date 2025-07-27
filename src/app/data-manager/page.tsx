@@ -1,12 +1,5 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,23 +11,29 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Moon, Sun, Loader2, Dumbbell, Warehouse, Search, Plus, Edit, Trash2 } from "lucide-react" // Updated icons
-import { useTheme } from "next-themes"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Dumbbell, Edit, Loader2, Plus, Search, Trash2, Warehouse } from "lucide-react"; // Updated icons
+import { useCallback, useEffect, useState } from "react"
 import { toast } from "sonner"
 
 import {
-  getSports,
-  addSport,
-  updateSport,
-  deleteSport,
-  deleteAllSports,
-  getFacilityTypes,
   addFacilityType,
-  updateFacilityType,
-  deleteFacilityType,
+  addSport,
   deleteAllFacilityTypes,
+  deleteAllSports,
+  deleteFacilityType,
+  deleteSport,
+  getFacilityTypes,
+  getSports,
+  updateFacilityType,
+  updateSport,
 } from "@/lib/sports"
 
 // Define types based on your Prisma schema
@@ -54,12 +53,9 @@ interface Sport {
 }
 
 export default function SportsAndFacilitiesManager() {
-  const { theme, setTheme } = useTheme()
-
   // Data states
   const [sports, setSports] = useState<Sport[]>([])
   const [facilityTypes, setFacilityTypes] = useState<FacilityType[]>([])
-  const [loading, setLoading] = useState(true)
 
   // Sport management states
   const [sportSearch, setSportSearch] = useState("")
@@ -83,11 +79,9 @@ export default function SportsAndFacilitiesManager() {
 
   // Fetch initial data
   const fetchData = useCallback(async () => {
-    setLoading(true)
     const [fetchedSports, fetchedFacilityTypes] = await Promise.all([getSports(), getFacilityTypes()])
     setSports(fetchedSports)
     setFacilityTypes(fetchedFacilityTypes)
-    setLoading(false)
   }, [])
 
   useEffect(() => {
@@ -312,15 +306,6 @@ export default function SportsAndFacilitiesManager() {
   const isFacilityUpdateDisabled =
     isFacilityActionPending || !editingFacility || editingFacility.name === originalEditingFacility?.name
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <span className="ml-2 text-lg text-muted-foreground">Loading data...</span>
-      </div>
-    )
-  }
-
   return (
     <div className="min-h-screen bg-background text-foreground font-sans">
       <div className="container mx-auto px-4 py-8 sm:px-6 lg:px-8 max-w-7xl">
@@ -332,11 +317,6 @@ export default function SportsAndFacilitiesManager() {
               Manage your sports and facility types efficiently
             </p>
           </div>
-          <Button variant="outline" size="icon" onClick={() => setTheme(theme === "light" ? "dark" : "light")}>
-            <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-            <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-            <span className="sr-only">Toggle theme</span>
-          </Button>
         </header>
 
         {/* Tabs */}
