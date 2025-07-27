@@ -20,7 +20,6 @@ import {
 } from "lucide-react";
 import * as React from "react";
 
-// Remove the hardcoded facilityTypes array - we'll use the prop instead
 const locationTypes = [
   { value: "Urban", icon: Building, label: "Urban" },
   { value: "Rural", icon: MapPin, label: "Rural" },
@@ -109,17 +108,17 @@ export default function Sidebar({ sports, facilityTypes }: SidebarProps) {
     (ministryOfSports ? 1 : 0);
 
   return (
-    <div className="relative flex h-[calc(100vh-64px)]">
-      {/* Toggle Button */}
+    <div className="relative">
+      {/* Toggle Button - Always sticky and visible */}
       <Button
         onClick={toggleSidebar}
         variant="ghost"
         size="sm"
-        className={`z-[9999] flex items-center gap-2 px-3 py-2 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-900 dark:hover:bg-zinc-800 dark:text-white text-black shadow-lg border-0 transition-all duration-300
+        className={`sticky top-20 z-[100] flex items-center gap-2 px-3 py-2 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-900 dark:hover:bg-zinc-800 dark:text-white text-black shadow-lg border-0 transition-all duration-300
           ${
             isOpen
-              ? "fixed top-20 left-[320px] rounded-l-none rounded-r-md md:absolute md:top-2 md:-right-9 md:rounded-l-none md:rounded-r-md"
-              : "fixed top-20 left-4 rounded-md md:absolute md:top-2 md:left-4 md:rounded-md"
+              ? "ml-[320px] rounded-l-none rounded-r-md md:ml-[320px]"
+              : "ml-4 rounded-md"
           }`}
         aria-label={isOpen ? "Close filters" : "Open filters"}
       >
@@ -140,23 +139,22 @@ export default function Sidebar({ sports, facilityTypes }: SidebarProps) {
         )}
       </Button>
 
-      {/* Sidebar */}
+      {/* Sidebar - Sticky positioned */}
       <div
         className={`
-          fixed md:relative top-16 md:top-0 left-0 md:left-auto
+          fixed md:sticky top-16 md:top-16 left-0
           h-[calc(100vh-64px)] 
           w-80 max-w-[90vw] md:max-w-none
           border-r border-border/40 
           bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 
           overflow-y-auto 
           transition-all duration-300 ease-in-out 
-          z-[9998] md:z-auto
+          z-[90] md:z-auto
           ${
             isOpen
               ? "translate-x-0 md:translate-x-0 md:w-80"
               : "-translate-x-full md:translate-x-0 md:w-0"
           }
-          md:sticky md:top-16
         `}
       >
         <div className={`p-4 sm:p-6 space-y-4 sm:space-y-6`}>
@@ -357,7 +355,7 @@ export default function Sidebar({ sports, facilityTypes }: SidebarProps) {
       {/* Overlay for mobile only */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black/20 z-[9997] md:hidden"
+          className="fixed inset-0 bg-black/20 z-[85] md:hidden"
           onClick={toggleSidebar}
           aria-hidden="true"
         />
