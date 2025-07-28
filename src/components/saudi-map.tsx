@@ -400,7 +400,8 @@ export default function InteractiveSaudiMap() {
                     </span>
                     <div className="flex items-center gap-1">
                       <span className="text-xs text-muted-foreground font-medium">{facilityData[id] || 0}</span>
-                      <Badge
+                      {/* I need no. of facilities instead of Sa-... */}
+                      {/* <Badge
                         variant="outline"
                         className="text-xs px-1.5 py-0 h-5"
                         style={{
@@ -415,7 +416,7 @@ export default function InteractiveSaudiMap() {
                         }}
                       >
                         {id.replace("SA-", "")}
-                      </Badge>
+                      </Badge> */}
                     </div>
                   </div>
                 ))}
