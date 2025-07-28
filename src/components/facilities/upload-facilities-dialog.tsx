@@ -298,7 +298,7 @@ export function UploadFacilitiesDialog({ open, onOpenChange, onSuccess }: Upload
           <DialogTitle className="text-foreground">Upload Facilities XLSX</DialogTitle>
           <DialogDescription className="text-muted-foreground">
             Upload an XLSX file to add multiple facilities. For multiple sports, use a comma-separated list (e.g.,
-            "Basketball, Tennis").
+            &quot;Basketball, Tennis&quot;).
           </DialogDescription>
         </DialogHeader>
 
@@ -367,7 +367,7 @@ export function UploadFacilitiesDialog({ open, onOpenChange, onSuccess }: Upload
                       <div key={`invalid-${index}`} className="text-sm">
                         <span className="font-medium text-orange-600">Row {invalidRow.row}:</span>
                         <span className="text-muted-foreground ml-1">
-                          "{invalidRow.data.facilityName || "Unnamed"}" - Missing: {invalidRow.missingFields.join(", ")}
+                          &quot;{invalidRow.data.facilityName || "Unnamed"}&quot; - Missing: {invalidRow.missingFields.join(", ")}
                         </span>
                       </div>
                     ))}
@@ -377,7 +377,7 @@ export function UploadFacilitiesDialog({ open, onOpenChange, onSuccess }: Upload
                       <div key={`error-${index}`} className="text-sm">
                         <span className="font-medium text-red-600">Row {error.row}:</span>
                         <span className="text-muted-foreground ml-1">
-                          "{error.facilityName}" - {error.error}
+                          &quot;{error.facilityName}" - {error.error}
                         </span>
                       </div>
                     ))}

@@ -49,3 +49,6 @@ export interface CSVRow {
   detailedUrl?: string
   sports?: string // Comma-separated sport names
 }
+
+// Add and export Region type
+export type Region = string;

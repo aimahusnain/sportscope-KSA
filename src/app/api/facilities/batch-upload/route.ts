@@ -1,31 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import type { CSVRow } from "@/types/facility" // Import CSVRow from the shared types
-
-// Add this helper function at the top of the file, before the POST function
-// It maps string region names to the KSARegion enum values.
-function mapRegionToKsaRegion(region: string): string | undefined {
-  const normalizedRegion = region.toUpperCase().replace(/ /g, "_").replace(/-/g, "_")
-  const validRegions = [
-    "RIYADH",
-    "MAKKAH",
-    "MADINAH",
-    "EASTERN_PROVINCE",
-    "ASIR",
-    "TABUK",
-    "QASSIM",
-    "HAIL",
-    "NORTHERN_BORDERS",
-    "JAZAN",
-    "NAJRAN",
-    "AL_BAHAH",
-    "AL_JOUF",
-  ]
-  if (validRegions.includes(normalizedRegion)) {
-    return normalizedRegion
-  }
-  return undefined // Or throw an error if you want strict validation
-}
+import type { Region } from "@/types/facility"
 
 export async function POST(request: NextRequest) {
   try {
@@ -59,8 +35,9 @@ export async function POST(request: NextRequest) {
             })
             resolvedFacilityTypeId = newFacilityType.id
             facilityTypeMap.set(facility.facilityType.toLowerCase(), newFacilityType.id)
-          } catch (createError: any) {
-            if (createError.code === "P2002") {
+          } catch (createError: unknown) {
+            const prismaError = createError as { code?: string }
+            if (prismaError.code === "P2002") {
               const existingType = await prisma.facilityType.findUnique({
                 where: { name: facility.facilityType },
               })
@@ -105,8 +82,9 @@ export async function POST(request: NextRequest) {
                 })
                 resolvedSportId = newSport.id
                 sportMap.set(sportName.toLowerCase(), newSport.id)
-              } catch (createError: any) {
-                if (createError.code === "P2002") {
+              } catch (createError: unknown) {
+                const prismaError = createError as { code?: string }
+                if (prismaError.code === "P2002") {
                   const existingSport = await prisma.sport.findUnique({
                     where: { name: sportName },
                   })
@@ -130,7 +108,7 @@ export async function POST(request: NextRequest) {
           data: {
             name: facility.facilityName,
             facilityTypeId: resolvedFacilityTypeId,
-            region: mapRegionToKsaRegion(facility.region) as any, // Ensure it's a valid enum value
+            region: facility.region as unknown as import("@prisma/client").KSARegion, // Ensure correct enum type
             country: facility.country,
             fullAddress: facility.fullAddress,
             rating: facility.rating ? Number.parseFloat(facility.rating) : null,
@@ -140,12 +118,13 @@ export async function POST(request: NextRequest) {
           },
         })
         successful++
-      } catch (error: any) {
+      } catch (error: unknown) {
+        const prismaError = error as { code?: string; message?: string }
         console.error(`Error creating facility "${facility.facilityName}":`, error)
-        if (error.code === "P2002") {
+        if (prismaError.code === "P2002") {
           errors.push(`Facility "${facility.facilityName}" already exists`)
         } else {
-          errors.push(`Failed to create facility "${facility.facilityName}": ${error.message}`)
+          errors.push(`Failed to create facility "${facility.facilityName}": ${prismaError.message || 'Unknown error'}`)
         }
         failed++
       }

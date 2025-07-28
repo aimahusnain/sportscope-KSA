@@ -9,7 +9,14 @@ import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, XAxis, YAxis, Respon
 import { toast } from "sonner"
 
 interface DashboardData {
-  facilities: any[]
+  facilities: Array<{
+    id: string
+    name: string
+    region: string
+    type: string
+    sports: string[]
+    [key: string]: unknown
+  }>
   regionData: Array<{ region: string; count: number }>
   facilityTypeData: Array<{ type: string; count: number }>
   sportsData: Array<{ sport: string; count: number }>

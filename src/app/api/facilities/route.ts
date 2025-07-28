@@ -7,7 +7,7 @@ export async function GET(request: Request) {
 
     // Pagination parameters
     const page = Number.parseInt(searchParams.get("page") || "1")
-    const limit = Number.parseInt(searchParams.get("limit") || "10000")
+    const limit = Number.parseInt(searchParams.get("limit") || "50")
     const skip = (page - 1) * limit
 
     // Search and filter parameters
@@ -21,7 +21,7 @@ export async function GET(request: Request) {
     const sortOrder = searchParams.get("sortOrder") || "desc"
 
     // Build where clause
-    const whereClause: any = {}
+    const whereClause: Record<string, unknown> = {}
 
     // Add search functionality
     if (search) {
@@ -51,7 +51,7 @@ export async function GET(request: Request) {
     }
 
     // Build orderBy clause
-    const orderBy: any = {}
+    const orderBy: Record<string, unknown> = {}
     if (sortBy === "facilityType") {
       orderBy.facilityType = { name: sortOrder }
     } else {

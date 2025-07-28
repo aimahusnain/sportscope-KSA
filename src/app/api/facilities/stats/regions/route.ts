@@ -20,7 +20,12 @@ export async function GET(request: NextRequest) {
     const locationTypesParam = searchParams.get("locationTypes")
     const ministryOfSportsParam = searchParams.get("ministryOfSports")
 
-    const whereClause: any = {}
+    const whereClause: {
+      sportIds?: { hasSome: string[] }
+      facilityTypeId?: { in: string[] }
+      region?: { in: KSARegion[] }
+      isMinistryOfSports?: boolean
+    } = {}
 
     // 1. Filter by Sports
     if (sportsParam) {
