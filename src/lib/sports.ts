@@ -96,9 +96,9 @@ export async function addSport(name: string, facilityTypeId: string) {
     })
     revalidatePath("/")
     return { success: true, message: "Sport added successfully.", data: newSport }
-    } catch (error: string | any) {
+  } catch (error: unknown) {
     console.error("Failed to add sport:", error)
-    return { success: false, message: error.message || "Failed to add sport." }
+    return { success: false, message: error instanceof Error ? error.message : "Failed to add sport." }
   }
 }
 
@@ -116,9 +116,9 @@ export async function updateSport(id: string, name: string, facilityTypeId: stri
     })
     revalidatePath("/")
     return { success: true, message: "Sport updated successfully.", data: updatedSport }
-  } catch (error: string | any) {
+  } catch (error: unknown) {
     console.error("Failed to update sport:", error)
-    return { success: false, message: error.message || "Failed to update sport." }
+    return { success: false, message: error instanceof Error ? error.message :"Failed to update sport." }
   }
 }
 
@@ -129,9 +129,9 @@ export async function deleteSport(id: string) {
     })
     revalidatePath("/")
     return { success: true, message: "Sport deleted successfully." }
-  } catch (error: string | any) {
+  } catch (error: unknown) {
     console.error("Failed to delete sport:", error)
-    return { success: false, message: error.message || "Failed to delete sport." }
+    return { success: false, message: error instanceof Error ? error.message :"Failed to delete sport." }
   }
 }
 
@@ -140,9 +140,9 @@ export async function deleteAllSports() {
     await prisma.sport.deleteMany({})
     revalidatePath("/")
     return { success: true, message: "All sports deleted successfully." }
-  } catch (error: string | any) {
+  } catch (error: unknown) {
     console.error("Failed to delete all sports:", error)
-    return { success: false, message: error.message || "Failed to delete all sports." }
+    return { success: false, message: error instanceof Error ? error.message :"Failed to delete all sports." }
   }
 }
 
@@ -161,9 +161,9 @@ export async function addFacilityType(name: string) {
     })
     revalidatePath("/")
     return { success: true, message: "Facility type added successfully.", data: newFacilityType }
-  } catch (error: string | any) {
+  } catch (error: unknown) {
     console.error("Failed to add facility type:", error)
-    return { success: false, message: error.message || "Failed to add facility type." }
+    return { success: false, message: error instanceof Error ? error.message :"Failed to add facility type." }
   }
 }
 
@@ -182,9 +182,9 @@ export async function updateFacilityType(id: string, name: string) {
     })
     revalidatePath("/")
     return { success: true, message: "Facility type updated successfully.", data: updatedFacilityType }
-  } catch (error: string | any) {
+  } catch (error: unknown) {
     console.error("Failed to update facility type:", error)
-    return { success: false, message: error.message || "Failed to update facility type." }
+    return { success: false, message: error instanceof Error ? error.message :"Failed to update facility type." }
   }
 }
 
@@ -206,9 +206,9 @@ export async function deleteFacilityType(id: string) {
     })
     revalidatePath("/")
     return { success: true, message: "Facility type deleted successfully." }
-  } catch (error: string | any) {
+  } catch (error: unknown) {
     console.error("Failed to delete facility type:", error)
-    return { success: false, message: error.message || "Failed to delete facility type." }
+    return { success: false, message: error instanceof Error ? error.message :"Failed to delete facility type." }
   }
 }
 
@@ -225,9 +225,9 @@ export async function deleteAllFacilityTypes() {
     await prisma.facilityType.deleteMany({})
     revalidatePath("/")
     return { success: true, message: "All facility types deleted successfully." }
-  } catch (error: string | any) {
+  } catch (error: unknown) {
     console.error("Failed to delete all facility types:", error)
-    return { success: false, message: error.message || "Failed to delete all facility types." }
+    return { success: false, message: error instanceof Error ? error.message :"Failed to delete all facility types." }
   }
 }
 
