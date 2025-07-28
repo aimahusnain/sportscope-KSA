@@ -13,7 +13,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table"
-import { ChevronDown, Search, Plus, Upload, Download } from "lucide-react"
+import { ChevronDown, Search, Plus, Upload, Download, Trash2, Loader2 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -27,6 +27,17 @@ import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
@@ -34,7 +45,9 @@ interface DataTableProps<TData, TValue> {
   onAdd: () => void
   onUpload: () => void
   onExport: () => void
+  onDeleteAll?: () => void
   isLoading?: boolean
+  isDeleting?: boolean
 }
 
 export function DataTable<TData, TValue>({
@@ -43,13 +56,16 @@ export function DataTable<TData, TValue>({
   onAdd,
   onUpload,
   onExport,
+  onDeleteAll,
   isLoading = false,
+  isDeleting = false,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
   const [rowSelection, setRowSelection] = React.useState({})
   const [globalFilter, setGlobalFilter] = React.useState("")
+  const [deleteAllConfirm, setDeleteAllConfirm] = React.useState("")
 
   const table = useReactTable({
     data,
@@ -124,6 +140,44 @@ export function DataTable<TData, TValue>({
             <Upload className="mr-2 h-4 w-4" />
             Upload
           </Button>
+          {onDeleteAll && (
+            <AlertDialog
+              onOpenChange={(open) => {
+                if (!open) setDeleteAllConfirm("")
+              }}
+            >
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" size="icon" disabled={data.length === 0 || isDeleting} className="h-10">
+                  <Trash2 className="h-4 w-4" />
+                  <span className="sr-only">Delete All Facilities</span>
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This action cannot be undone. This will permanently delete all facilities and remove their
+                    connections to sports.
+                    <br />
+                    Please type &quot;Delete All&quot; to confirm.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <Input
+                  placeholder="Type 'Delete All' to confirm"
+                  value={deleteAllConfirm}
+                  onChange={(e) => setDeleteAllConfirm(e.target.value)}
+                  className="mt-4"
+                />
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={onDeleteAll} disabled={isDeleting || deleteAllConfirm !== "Delete All"}>
+                    {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Delete All
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
           <Button onClick={onAdd} className="bg-primary hover:bg-primary/90">
             <Plus className="mr-2 h-4 w-4" />
             Add Facility

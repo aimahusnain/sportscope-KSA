@@ -12,6 +12,9 @@ export interface Facility {
   rating?: number
   reviewsNumber?: number
   detailedUrl?: string
+  // Added sports relationship
+  sportIds: string[]
+  sports?: Sport[]
   createdAt: Date
   updatedAt: Date
 }
@@ -25,6 +28,16 @@ export interface FacilityType {
   }
 }
 
+export interface Sport {
+  id: string
+  name: string
+  facilityTypeId: string
+  facilityType?: FacilityType
+  // Added facilities relationship
+  facilityIds: string[]
+  facilities?: Facility[]
+}
+
 export interface CSVRow {
   facilityName: string
   facilityType: string
@@ -34,4 +47,5 @@ export interface CSVRow {
   rating?: string
   reviewsNumber?: string
   detailedUrl?: string
+  sports?: string // Comma-separated sport names
 }

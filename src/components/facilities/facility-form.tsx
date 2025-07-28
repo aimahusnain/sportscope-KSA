@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import {
@@ -16,9 +15,10 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Loader2 } from "lucide-react"
 import { toast } from "sonner"
-import type { Facility, FacilityType } from "@/types/facility"
+import type { Facility, FacilityType, Sport } from "@/types/facility"
 
 const KSA_REGIONS = [
   "RIYADH",
@@ -69,6 +69,7 @@ interface FormData {
   rating: string
   reviewsNumber: string
   detailedUrl: string
+  sportIds: string[]
 }
 
 export function FacilityForm({ open, onOpenChange, facility, facilityTypes, onSuccess }: FacilityFormProps) {
@@ -81,15 +82,44 @@ export function FacilityForm({ open, onOpenChange, facility, facilityTypes, onSu
     rating: "",
     reviewsNumber: "",
     detailedUrl: "",
+    sportIds: [],
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [availableSports, setAvailableSports] = useState<Sport[]>([])
+  const [loadingSports, setLoadingSports] = useState(false)
 
   const isEditing = !!facility
+
+  // Fetch sports when facility type changes
+  // useEffect(() => {
+  //   if (formData.facilityTypeId) {
+  //     fetchSportsForFacilityType(formData.facilityTypeId)
+  //   } else {
+  //     setAvailableSports([])
+  //   }
+  // }, [formData.facilityTypeId])
+
+  const fetchSportsForFacilityType = async (facilityTypeId: string) => {
+    try {
+      setLoadingSports(true)
+      // Fetch all sports, not just for specific facility type
+      const response = await fetch(`/api/sports`)
+      if (response.ok) {
+        const sports = await response.json()
+        setAvailableSports(sports)
+      }
+    } catch (error) {
+      console.error("Error fetching sports:", error)
+    } finally {
+      setLoadingSports(false)
+    }
+  }
 
   // Reset form when dialog opens/closes or facility changes
   useEffect(() => {
     if (open) {
+      fetchAllSports()
       if (facility) {
         setFormData({
           name: facility.name,
@@ -100,6 +130,7 @@ export function FacilityForm({ open, onOpenChange, facility, facilityTypes, onSu
           rating: facility.rating?.toString() || "",
           reviewsNumber: facility.reviewsNumber?.toString() || "",
           detailedUrl: facility.detailedUrl || "",
+          sportIds: facility.sportIds || [],
         })
       } else {
         setFormData({
@@ -111,11 +142,34 @@ export function FacilityForm({ open, onOpenChange, facility, facilityTypes, onSu
           rating: "",
           reviewsNumber: "",
           detailedUrl: "",
+          sportIds: [],
         })
       }
       setErrors({})
     }
   }, [open, facility])
+
+  // Fetch sports when form opens
+  useEffect(() => {
+    if (open) {
+      fetchAllSports()
+    }
+  }, [open])
+
+  const fetchAllSports = async () => {
+    try {
+      setLoadingSports(true)
+      const response = await fetch(`/api/sports`)
+      if (response.ok) {
+        const sports = await response.json()
+        setAvailableSports(sports)
+      }
+    } catch (error) {
+      console.error("Error fetching sports:", error)
+    } finally {
+      setLoadingSports(false)
+    }
+  }
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {}
@@ -131,9 +185,6 @@ export function FacilityForm({ open, onOpenChange, facility, facilityTypes, onSu
     }
     if (!formData.country.trim()) {
       newErrors.country = "Country is required"
-    }
-    if (!formData.fullAddress.trim()) {
-      newErrors.fullAddress = "Full address is required"
     }
     if (
       formData.rating &&
@@ -168,6 +219,7 @@ export function FacilityForm({ open, onOpenChange, facility, facilityTypes, onSu
         rating: formData.rating ? Number(formData.rating) : null,
         reviewsNumber: formData.reviewsNumber ? Number(formData.reviewsNumber) : null,
         detailedUrl: formData.detailedUrl.trim() || null,
+        sportIds: formData.sportIds,
       }
 
       const url = isEditing ? `/api/facilities/${facility.id}` : "/api/facilities"
@@ -197,16 +249,24 @@ export function FacilityForm({ open, onOpenChange, facility, facilityTypes, onSu
     }
   }
 
-  const handleInputChange = (field: keyof FormData, value: string) => {
+  const handleInputChange = (field: keyof FormData, value: string | string[]) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
     if (errors[field]) {
       setErrors((prev) => ({ ...prev, [field]: "" }))
     }
   }
 
+  const handleSportToggle = (sportId: string) => {
+    const newSportIds = formData.sportIds.includes(sportId)
+      ? formData.sportIds.filter((id) => id !== sportId)
+      : [...formData.sportIds, sportId]
+
+    handleInputChange("sportIds", newSportIds)
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] bg-background border-border max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[700px] bg-background border-border max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-foreground">{isEditing ? "Edit Facility" : "Add New Facility"}</DialogTitle>
           <DialogDescription className="text-muted-foreground">
@@ -235,7 +295,11 @@ export function FacilityForm({ open, onOpenChange, facility, facilityTypes, onSu
               </Label>
               <Select
                 value={formData.facilityTypeId}
-                onValueChange={(value) => handleInputChange("facilityTypeId", value)}
+                onValueChange={(value) => {
+                  handleInputChange("facilityTypeId", value)
+                  // Reset sports when facility type changes
+                  handleInputChange("sportIds", [])
+                }}
               >
                 <SelectTrigger
                   className={`bg-background border-border ${errors.facilityTypeId ? "border-destructive" : ""}`}
@@ -348,6 +412,34 @@ export function FacilityForm({ open, onOpenChange, facility, facilityTypes, onSu
               className="bg-background border-border"
               placeholder="Enter detailed URL (optional)"
             />
+          </div>
+
+          {/* Sports Selection */}
+          <div className="space-y-2">
+            <Label className="text-foreground">Sports</Label>
+            {loadingSports ? (
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Loading sports...
+              </div>
+            ) : availableSports.length > 0 ? (
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-2 max-h-32 overflow-y-auto border rounded-md p-3">
+                {availableSports.map((sport) => (
+                  <div key={sport.id} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`sport-${sport.id}`}
+                      checked={formData.sportIds.includes(sport.id)}
+                      onCheckedChange={() => handleSportToggle(sport.id)}
+                    />
+                    <Label htmlFor={`sport-${sport.id}`} className="text-sm font-normal cursor-pointer">
+                      {sport.name}
+                    </Label>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">No sports available</p>
+            )}
           </div>
 
           <DialogFooter>

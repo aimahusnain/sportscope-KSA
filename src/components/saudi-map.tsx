@@ -61,15 +61,20 @@ export default function InteractiveSaudiMap() {
   const svgRef = useRef<SVGSVGElement>(null)
 
   // Get filters from context
-  const { selectedSports, selectedFacilityTypes, selectedLocationTypes, ministryOfSports, clearAllFilters } =
-    useFilters()
+  const {
+    selectedSports,
+    selectedFacilityTypes,
+    selectedLocationTypes,
+    ministryOfSports,
+    clearAllFilters,
+    setSelectedLocationTypes, // Function to update selectedLocationTypes
+  } = useFilters()
 
   // Fetch facility statistics from server with filters
   const fetchRegionStats = useCallback(async () => {
     try {
       setIsLoading(true)
       setError(null)
-
       // Build query parameters
       const params = new URLSearchParams()
       if (selectedSports.length > 0) {
@@ -84,7 +89,6 @@ export default function InteractiveSaudiMap() {
       if (ministryOfSports) {
         params.append("ministryOfSports", "true")
       }
-
       const response = await fetch(`/api/facilities/stats/regions?${params.toString()}`)
       if (!response.ok) {
         throw new Error("Failed to fetch region statistics")
@@ -124,38 +128,66 @@ export default function InteractiveSaudiMap() {
     fetchRegionStats()
   }, [fetchRegionStats])
 
-  // Function to handle SVG initialization
-  useEffect(() => {
-    const addEventListeners = () => {
-      if (svgRef.current) {
-        const paths = svgRef.current.querySelectorAll('path[id^="SA-"]')
-        paths.forEach((path) => {
-          path.addEventListener("mouseenter", (e) => {
-            const target = e.target as SVGPathElement
-            setActiveRegion(target.id)
-            setShowTooltip(true)
-          })
-
-          path.addEventListener("mousemove", (e) => {
-            const svgRect = svgRef.current!.getBoundingClientRect()
-            setTooltipPosition({
-              x: (e as MouseEvent).clientX - svgRect.left,
-              y: (e as MouseEvent).clientY - svgRect.top,
-            })
-          })
-
-          path.addEventListener("mouseleave", () => {
-            setShowTooltip(false)
-            setActiveRegion(null)
-          })
-        })
+  // Function to handle SVG path or list item click
+  const handleRegionClick = useCallback(
+    (regionId: string) => {
+      // If the clicked region is already selected, deselect it. Otherwise, select it.
+      if (selectedLocationTypes.includes(regionId)) {
+        setSelectedLocationTypes([]) // Deselect
+      } else {
+        setSelectedLocationTypes([regionId]) // Select this region
       }
+    },
+    [selectedLocationTypes, setSelectedLocationTypes],
+  )
+
+  // Function to handle SVG initialization and add event listeners
+  useEffect(() => {
+    const paths = svgRef.current?.querySelectorAll('path[id^="SA-"]')
+    if (!paths) return
+
+    const handleMouseEnter = (e: Event) => {
+      const target = e.target as SVGPathElement
+      setActiveRegion(target.id)
+      setShowTooltip(true)
+    }
+    const handleMouseMove = (e: Event) => {
+      const svgRect = svgRef.current!.getBoundingClientRect()
+      setTooltipPosition({
+        x: (e as MouseEvent).clientX - svgRect.left,
+        y: (e as MouseEvent).clientY - svgRect.top,
+      })
+    }
+    const handleMouseLeave = () => {
+      setShowTooltip(false)
+      setActiveRegion(null)
+    }
+    const handleClick = (e: Event) => {
+      const target = e.target as SVGPathElement
+      handleRegionClick(target.id)
     }
 
     if (!isLoading) {
-      addEventListeners()
+      paths.forEach((path) => {
+        path.addEventListener("mouseenter", handleMouseEnter)
+        path.addEventListener("mousemove", handleMouseMove)
+        path.addEventListener("mouseleave", handleMouseLeave)
+        path.addEventListener("click", handleClick)
+      })
     }
-  }, [isLoading])
+
+    // Cleanup function to remove event listeners
+    return () => {
+      if (!isLoading) {
+        paths.forEach((path) => {
+          path.removeEventListener("mouseenter", handleMouseEnter)
+          path.removeEventListener("mousemove", handleMouseMove)
+          path.removeEventListener("mouseleave", handleMouseLeave)
+          path.removeEventListener("click", handleClick)
+        })
+      }
+    }
+  }, [isLoading, handleRegionClick])
 
   // Get color for a region with opacity adjustment when another region is hovered
   const getRegionColor = (regionId: string) => {
@@ -249,7 +281,6 @@ export default function InteractiveSaudiMap() {
           </div>
         </Card>
       </div>
-
       <div className="flex flex-col xl:flex-row gap-6 h-full">
         <div className="relative flex-grow min-h-0">
           {/* SVG Map */}
@@ -295,6 +326,7 @@ export default function InteractiveSaudiMap() {
                   role="button"
                   tabIndex={0}
                   aria-label={`${region.name} region - ${facilityData[region.id] || 0} facilities`}
+                  onClick={() => handleRegionClick(region.id)} // Add onClick handler
                 >
                   <title>
                     {region.name} - {facilityData[region.id] || 0} facilities
@@ -303,7 +335,6 @@ export default function InteractiveSaudiMap() {
               ))}
             </g>
           </svg>
-
           {/* Tooltip with facility count */}
           {showTooltip && activeRegion && (
             <div
@@ -319,7 +350,6 @@ export default function InteractiveSaudiMap() {
             </div>
           )}
         </div>
-
         {/* Desktop Legend - Hidden on mobile */}
         <div className="hidden xl:block xl:w-64 flex-shrink-0">
           <Card className="p-3 h-fit">
@@ -347,21 +377,23 @@ export default function InteractiveSaudiMap() {
                   <div
                     key={id}
                     className={`flex items-center gap-2 p-1.5 rounded-md transition-all duration-200 cursor-pointer hover:bg-muted/50 ${
-                      activeRegion === id ? "bg-muted ring-1 ring-primary/20" : ""
+                      activeRegion === id || selectedLocationTypes.includes(id) ? "bg-muted ring-1 ring-primary/20" : ""
                     }`}
                     onMouseEnter={() => setActiveRegion(id)}
                     onMouseLeave={() => setActiveRegion(null)}
+                    onClick={() => handleRegionClick(id)} // Add onClick handler
                   >
                     <div
                       className="w-3 h-3 rounded-full border border-white shadow-sm transition-all duration-200"
                       style={{
                         backgroundColor: regionColors[id].base,
-                        transform: activeRegion === id ? "scale(1.1)" : "scale(1)",
+                        transform:
+                          activeRegion === id || selectedLocationTypes.includes(id) ? "scale(1.1)" : "scale(1)",
                       }}
                     />
                     <span
                       className={`text-xs font-medium transition-colors duration-200 flex-1 truncate ${
-                        activeRegion === id ? "text-primary" : "text-foreground"
+                        activeRegion === id || selectedLocationTypes.includes(id) ? "text-primary" : "text-foreground"
                       }`}
                     >
                       {name}
@@ -372,8 +404,14 @@ export default function InteractiveSaudiMap() {
                         variant="outline"
                         className="text-xs px-1.5 py-0 h-5"
                         style={{
-                          borderColor: activeRegion === id ? regionColors[id].base : undefined,
-                          color: activeRegion === id ? regionColors[id].base : undefined,
+                          borderColor:
+                            activeRegion === id || selectedLocationTypes.includes(id)
+                              ? regionColors[id].base
+                              : undefined,
+                          color:
+                            activeRegion === id || selectedLocationTypes.includes(id)
+                              ? regionColors[id].base
+                              : undefined,
                         }}
                       >
                         {id.replace("SA-", "")}

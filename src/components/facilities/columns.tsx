@@ -69,7 +69,7 @@ export const createColumns = ({ onEdit, onDelete }: ColumnsProps): ColumnDef<Fac
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           className="h-8 px-2 lg:px-3"
         >
-          Type
+          Facility Type
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       )
@@ -80,6 +80,31 @@ export const createColumns = ({ onEdit, onDelete }: ColumnsProps): ColumnDef<Fac
         <Badge variant="secondary" className="bg-secondary/50 text-secondary-foreground">
           {facilityType}
         </Badge>
+      )
+    },
+  },
+  {
+    accessorKey: "sports",
+    header: "Sports",
+    cell: ({ row }) => {
+      const sports = row.original.sports || []
+      if (sports.length === 0) {
+        return <span className="text-muted-foreground text-sm">No sports</span>
+      }
+
+      return (
+        <div className="flex flex-wrap gap-1 max-w-[200px]">
+          {sports.slice(0, 2).map((sport) => (
+            <Badge key={sport.id} variant="outline" className="text-xs">
+              {sport.name}
+            </Badge>
+          ))}
+          {sports.length > 2 && (
+            <Badge variant="outline" className="text-xs">
+              +{sports.length - 2} more
+            </Badge>
+          )}
+        </div>
       )
     },
   },

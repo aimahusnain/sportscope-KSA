@@ -622,7 +622,7 @@ export default function SportsAndFacilitiesManager() {
                             This action cannot be undone. This will permanently
                             delete all sports.
                             <br />
-                            Please type "Delete All" to confirm.
+                            Please type &quot;Delete All&quot; to confirm.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <Input
@@ -716,7 +716,7 @@ export default function SportsAndFacilitiesManager() {
                                   </AlertDialogTitle>
                                   <AlertDialogDescription>
                                     This action cannot be undone. This will
-                                    permanently delete "{sport.name}".
+                                    permanently delete &quot;{sport.name}&quot;.
                                   </AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
@@ -765,8 +765,8 @@ export default function SportsAndFacilitiesManager() {
                                   setNewSportFacilityTypeId(""); // Clear facility type for new sport
                                 }}
                               >
-                                <Plus className="h-4 w-4 mr-2" /> Add "
-                                {sportSearch}" as a new sport
+                                <Plus className="h-4 w-4 mr-2" /> Add &quot;
+                                {sportSearch}&quot; as a new sport
                               </Button>
                             </DialogTrigger>
                             <DialogContent className="sm:max-w-[425px]">
@@ -1023,7 +1023,7 @@ export default function SportsAndFacilitiesManager() {
                             **Note**: You cannot delete facility types if any
                             sports are connected to them.
                             <br />
-                            Please type "Delete All" to confirm.
+                            Please type &quot;Delete All&quot; to confirm.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <Input
@@ -1118,7 +1118,7 @@ export default function SportsAndFacilitiesManager() {
                                   </AlertDialogTitle>
                                   <AlertDialogDescription>
                                     This action cannot be undone. This will
-                                    permanently delete "{facility.name}".
+                                    permanently delete &quot;{facility.name}&quot;.
                                     <br />
                                     **Note**: This facility type cannot be
                                     deleted if any sports are connected to it.
