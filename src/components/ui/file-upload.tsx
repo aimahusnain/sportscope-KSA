@@ -185,7 +185,7 @@ export function GridPattern() {
               }`}
             />
           )
-        }),
+        })
       )}
     </div>
   )

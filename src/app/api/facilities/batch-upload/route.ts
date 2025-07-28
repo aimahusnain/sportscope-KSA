@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import type { CSVRow } from "@/types/facility" // Import CSVRow from the shared types
-import type { Region } from "@/types/facility"
+// import type { Region } from "@/types/facility"
 
 export async function POST(request: NextRequest) {
   try {

@@ -63,22 +63,22 @@ export async function addFacility(facilityData: CreateFacilityData) {
   try {
     const facility = await prisma.facility.create({
       data: {
-        name: facilityData.name,
-        facilityTypeId: facilityData.facilityTypeId,
-        region: facilityData.region as any, // Cast to enum
-        country: facilityData.country,
-        fullAddress: facilityData.fullAddress,
-        rating: facilityData.rating,
-        reviewsNumber: facilityData.reviewsNumber,
-        detailedUrl: facilityData.detailedUrl,
+      name: facilityData.name,
+      facilityTypeId: facilityData.facilityTypeId,
+      region: facilityData.region as typeof KSA_REGIONS[number], // Cast to KSARegion
+      country: facilityData.country,
+      fullAddress: facilityData.fullAddress,
+      rating: facilityData.rating,
+      reviewsNumber: facilityData.reviewsNumber,
+      detailedUrl: facilityData.detailedUrl,
       },
       include: {
-        facilityType: {
-          select: {
-            id: true,
-            name: true,
-          },
+      facilityType: {
+        select: {
+        id: true,
+        name: true,
         },
+      },
       },
     })
     return { success: true, data: facility, message: "Facility added successfully" }
@@ -96,7 +96,9 @@ export async function updateFacility(facilityData: UpdateFacilityData) {
       data: {
         name: facilityData.name,
         facilityTypeId: facilityData.facilityTypeId,
-        region: facilityData.region as any, // Cast to enum
+        region: KSA_REGIONS.includes(facilityData.region as typeof KSA_REGIONS[number])
+          ? (facilityData.region as typeof KSA_REGIONS[number])
+          : (() => { throw new Error("Invalid region value"); })(),
         country: facilityData.country,
         fullAddress: facilityData.fullAddress,
         rating: facilityData.rating,

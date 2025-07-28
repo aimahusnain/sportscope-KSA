@@ -6,7 +6,7 @@ import { SportsDistributionChart } from "@/components/charts/sports-distribution
 import { FacilitiesByRegionChart } from "@/components/charts/facilities-by-region-chart";
 import { TopSportsByFacilityChart } from "@/components/charts/top-sports-by-facility-chart";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Building2, MapPin, Trophy, Star, Loader2 } from "lucide-react";
+import { Building2, MapPin, Trophy, Loader2 } from "lucide-react";
 import { useFilters } from "@/contexts/filter-context";
 import { toast } from "sonner";
 import { regionNames } from "@/lib/dashboard-data"; // Import regionNames for display
