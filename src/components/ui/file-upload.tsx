@@ -1,28 +1,36 @@
 "use client"
 
-import { cn } from "@/lib/utils"
-import { useRef, useState } from "react"
+import { JSX, useRef, useState } from "react"
 import { Upload } from "lucide-react"
 
-export const FileUpload = ({
-  onChange,
-}: {
+// Utility function to combine classnames
+const cn = (...classes: (string | undefined | boolean)[]): string => {
+  return classes.filter(Boolean).join(' ')
+}
+
+interface FileUploadProps {
   onChange?: (files: File[]) => void
-}) => {
+}
+
+export const FileUpload: React.FC<FileUploadProps> = ({ onChange }) => {
   const [files, setFiles] = useState<File[]>([])
-  const [isDragActive, setIsDragActive] = useState(false)
+  const [isDragActive, setIsDragActive] = useState<boolean>(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const handleFileChange = (newFiles: File[]) => {
+  const handleFileChange = (newFiles: File[]): void => {
     setFiles((prevFiles) => [...prevFiles, ...newFiles])
-    onChange && onChange(newFiles)
+    if (onChange) {
+      onChange(newFiles)
+    }
   }
 
-  const handleClick = () => {
-    fileInputRef.current?.click()
+  const handleClick = (): void => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click()
+    }
   }
 
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>): void => {
     e.preventDefault()
     setIsDragActive(false)
     
@@ -35,14 +43,21 @@ export const FileUpload = ({
     }
   }
 
-  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>): void => {
     e.preventDefault()
     setIsDragActive(true)
   }
 
-  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>): void => {
     e.preventDefault()
     setIsDragActive(false)
+  }
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
+    const selectedFiles = e.target.files
+    if (selectedFiles) {
+      handleFileChange(Array.from(selectedFiles))
+    }
   }
 
   return (
@@ -60,7 +75,7 @@ export const FileUpload = ({
           ref={fileInputRef}
           id="file-upload-handle"
           type="file"
-          onChange={(e) => handleFileChange(Array.from(e.target.files || []))}
+          onChange={handleInputChange}
           className="hidden"
           accept=".xlsx"
         />
@@ -75,10 +90,10 @@ export const FileUpload = ({
             Drag or drop your files here or click to upload
           </p>
           <div className="relative w-full mt-10 max-w-xl mx-auto">
-            {files.length > 0 &&
+            {files.length > 0 ? (
               files.map((file, idx) => (
                 <div
-                  key={"file" + idx}
+                  key={`file-${idx}`}
                   className={cn(
                     "relative overflow-hidden z-40 bg-white dark:bg-neutral-900 flex flex-col items-start justify-start md:h-24 p-4 mt-4 w-full mx-auto rounded-md",
                     "shadow-sm",
@@ -101,13 +116,15 @@ export const FileUpload = ({
                     </p>
                   </div>
                 </div>
-              ))}
-            {!files.length && (
+              ))
+            ) : null}
+            
+            {files.length === 0 ? (
               <div
                 className={cn(
                   "relative group-hover/file:shadow-2xl z-40 bg-white dark:bg-neutral-900 flex items-center justify-center h-32 mt-4 w-full max-w-[8rem] mx-auto rounded-md transition-all duration-200",
                   "shadow-[0px_10px_50px_rgba(0,0,0,0.1)]",
-                  isDragActive && "transform translate-x-5 -translate-y-5 opacity-90"
+                  isDragActive ? "transform translate-x-5 -translate-y-5 opacity-90" : ""
                 )}
               >
                 {isDragActive ? (
@@ -119,15 +136,16 @@ export const FileUpload = ({
                   <Upload className="h-4 w-4 text-neutral-600 dark:text-neutral-300" />
                 )}
               </div>
-            )}
-            {!files.length && (
+            ) : null}
+            
+            {files.length === 0 ? (
               <div
                 className={cn(
                   "absolute border border-dashed border-sky-400 inset-0 z-30 bg-transparent flex items-center justify-center h-32 mt-4 w-full max-w-[8rem] mx-auto rounded-md transition-opacity duration-200",
                   isDragActive ? "opacity-100" : "opacity-0"
                 )}
-              ></div>
-            )}
+              />
+            ) : null}
           </div>
         </div>
       </div>
@@ -135,9 +153,10 @@ export const FileUpload = ({
   )
 }
 
-export function GridPattern() {
+export function GridPattern(): JSX.Element {
   const columns = 41
   const rows = 11
+  
   return (
     <div className="flex bg-gray-100 dark:bg-neutral-900 shrink-0 flex-wrap justify-center items-center gap-x-px gap-y-px scale-105">
       {Array.from({ length: rows }).map((_, row) =>
