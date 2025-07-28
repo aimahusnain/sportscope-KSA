@@ -55,7 +55,12 @@ export async function POST(request: Request) {
     // error is unknown, so we can use type narrowing if needed
     console.error("Error creating facility type:", error)
 
-    if (typeof error === "object" && error !== null && "code" in error && (error as any).code === "P2002") {
+    if (
+      typeof error === "object" &&
+      error !== null &&
+      "code" in error &&
+      (error as Record<string, unknown>).code === "P2002"
+    ) {
       return NextResponse.json({ error: "Facility type with this name already exists" }, { status: 409 })
     }
 

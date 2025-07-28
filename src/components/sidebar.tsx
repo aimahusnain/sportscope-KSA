@@ -28,7 +28,7 @@ type SidebarProps = {
 export default function Sidebar({ sports, facilityTypes }: SidebarProps) {
   const [isOpen, setIsOpen] = React.useState(false)
   const [showButton, setShowButton] = React.useState(true)
-
+console.log("Sidebar rendered with sports:",showButton)
   // Use the filter context instead of local state
   const {
     selectedSports,

@@ -377,7 +377,7 @@ export function UploadFacilitiesDialog({ open, onOpenChange, onSuccess }: Upload
                       <div key={`error-${index}`} className="text-sm">
                         <span className="font-medium text-red-600">Row {error.row}:</span>
                         <span className="text-muted-foreground ml-1">
-                          &quot;{error.facilityName}" - {error.error}
+                          &quot;{error.facilityName}&quot; - {error.error}
                         </span>
                       </div>
                     ))}
