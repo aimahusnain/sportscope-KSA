@@ -100,21 +100,6 @@ export function FacilityForm({ open, onOpenChange, facility, facilityTypes, onSu
   //   }
   // }, [formData.facilityTypeId])
 
-  const fetchSportsForFacilityType = async (facilityTypeId: string) => {
-    try {
-      setLoadingSports(true)
-      // Fetch all sports, not just for specific facility type
-      const response = await fetch(`/api/sports`)
-      if (response.ok) {
-        const sports = await response.json()
-        setAvailableSports(sports)
-      }
-    } catch (error) {
-      console.error("Error fetching sports:", error)
-    } finally {
-      setLoadingSports(false)
-    }
-  }
 
   // Reset form when dialog opens/closes or facility changes
   useEffect(() => {

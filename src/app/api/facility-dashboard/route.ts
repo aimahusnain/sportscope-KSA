@@ -43,21 +43,19 @@ export async function GET() {
     })
 
     // Process data for charts
-    const regionData = facilities.reduce((acc: any[], facility) => {
-      const regionName = REGION_DISPLAY_NAMES[facility.region] || facility.region
-      const existing = acc.find((item) => item.region === regionName)
-      if (existing) {
-        existing.count += 1
+    const regionDataMap: Record<string, { region: string; count: number }> = {};
+    for (const facility of facilities) {
+      const regionName = REGION_DISPLAY_NAMES[facility.region] || facility.region;
+      if (regionDataMap[regionName]) {
+        regionDataMap[regionName].count += 1;
       } else {
-        acc.push({
-          region: regionName,
-          count: 1,
-        })
+        regionDataMap[regionName] = { region: regionName, count: 1 };
       }
-      return acc
-    }, [])
+    }
+    const regionData = Object.values(regionDataMap);
 
-    const facilityTypeData = facilities.reduce((acc: any[], facility) => {
+    type FacilityTypeData = { type: string; count: number };
+    const facilityTypeData = facilities.reduce<FacilityTypeData[]>((acc, facility) => {
       if (facility.facilityType) {
         const existing = acc.find((item) => item.type === facility.facilityType!.name)
         if (existing) {

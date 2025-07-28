@@ -109,8 +109,14 @@ export default function SportsAndFacilitiesManager() {
       getSports(),
       getFacilityTypes(),
     ]);
-    // Ensure fetchedSports matches the Sport interface
-    const normalizedSports: Sport[] = fetchedSports.map((s: any) => ({
+    // Define the expected type for fetchedSports
+    interface FetchedSport {
+      id: string;
+      name: string;
+      facilityTypeId?: string;
+      facilityType?: FacilityType;
+    }
+    const normalizedSports: Sport[] = (fetchedSports as FetchedSport[]).map((s) => ({
       id: s.id,
       name: s.name,
       facilityTypeId: s.facilityTypeId ?? "",
@@ -1172,8 +1178,8 @@ export default function SportsAndFacilitiesManager() {
                                   setNewFacilityName(facilitySearch);
                                 }}
                               >
-                                <Plus className="h-4 w-4 mr-2" /> Add "
-                                {facilitySearch}" as a new facility type
+                                <Plus className="h-4 w-4 mr-2" /> Add &quot;  
+                                {facilitySearch}&quot; as a new facility type
                               </Button>
                             </DialogTrigger>
                             <DialogContent className="sm:max-w-[425px]">

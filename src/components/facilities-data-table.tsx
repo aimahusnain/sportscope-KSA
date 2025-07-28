@@ -226,7 +226,7 @@ export default function FacilitiesDataTable() {
                       </p>
                     </div>
                     <div>
-                      To confirm this action, please type <strong>"Delete All Facilities"</strong> in the field below:
+                      To confirm this action, please type <strong>&quot;Delete All Facilities&quot;</strong> in the field below:
                     </div>
                   </AlertDialogDescription>
                 </AlertDialogHeader>
@@ -301,7 +301,7 @@ export default function FacilitiesDataTable() {
           <AlertDialogHeader>
             <AlertDialogTitle className="text-foreground">Delete Facility</AlertDialogTitle>
             <AlertDialogDescription className="text-muted-foreground">
-              Are you sure you want to delete "{deletingFacility?.name}"? This action cannot be undone.
+              Are you sure you want to delete &quot;{deletingFacility?.name}&quot;? This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
