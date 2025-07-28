@@ -1,8 +1,11 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef, useEffect, useCallback } from "react"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Loader2, RotateCcw } from "lucide-react"
+import { toast } from "sonner"
+import { useFilters } from "@/contexts/filter-context"
 import regionsData from "@/data/ksa-regions-svg.json"
 
 // Generate region names from JSON data
@@ -13,23 +16,6 @@ const regionNames: Record<string, string> = regionsData.regions.reduce(
   },
   {} as Record<string, string>,
 )
-
-// Sample facility data for each region
-const facilityData: Record<string, number> = {
-  "SA-01": 45, // Riyadh
-  "SA-02": 32, // Makkah
-  "SA-03": 28, // Eastern Province
-  "SA-04": 18, // Asir
-  "SA-05": 15, // Qassim
-  "SA-06": 22, // Ha'il
-  "SA-07": 12, // Tabuk
-  "SA-08": 8, // Northern Borders
-  "SA-09": 14, // Jazan
-  "SA-10": 25, // Najran
-  "SA-11": 19, // Al Bahah
-  "SA-12": 16, // Al Jawf
-  "SA-13": 11, // Madinah
-}
 
 // Beautiful, harmonious color palette - soft and professional
 const regionColors: Record<string, { base: string; hover: string }> = {
@@ -48,57 +34,209 @@ const regionColors: Record<string, { base: string; hover: string }> = {
   "SA-13": { base: "#22C55E", hover: "#16A34A" }, // Soft Green
 }
 
+interface RegionStats {
+  facilityData: Record<string, number>
+  totalFacilities: number
+  regionCounts: Array<{
+    region: string
+    count: number
+    mapId: string
+  }>
+  appliedFilters?: {
+    sports: string[]
+    facilityTypes: string[]
+    locationTypes: string[]
+    ministryOfSports: boolean
+  }
+}
+
 export default function InteractiveSaudiMap() {
   const [activeRegion, setActiveRegion] = useState<string | null>(null)
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 })
   const [showTooltip, setShowTooltip] = useState(false)
+  const [facilityData, setFacilityData] = useState<Record<string, number>>({})
+  const [totalFacilities, setTotalFacilities] = useState(0)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const svgRef = useRef<SVGSVGElement>(null)
 
-  // Calculate total facilities
-  const totalFacilities = Object.values(facilityData).reduce((sum, count) => sum + count, 0)
+  // Get filters from context
+  const {
+    selectedSports,
+    selectedFacilityTypes,
+    selectedLocationTypes,
+    ministryOfSports,
+    clearAllFilters,
+    setSelectedLocationTypes, // Function to update selectedLocationTypes
+  } = useFilters()
 
-  // Function to handle SVG initialization
+  // Fetch facility statistics from server with filters
+  const fetchRegionStats = useCallback(async () => {
+    try {
+      setIsLoading(true)
+      setError(null)
+      // Build query parameters
+      const params = new URLSearchParams()
+      if (selectedSports.length > 0) {
+        params.append("sports", selectedSports.join(","))
+      }
+      if (selectedFacilityTypes.length > 0) {
+        params.append("facilityTypes", selectedFacilityTypes.join(","))
+      }
+      if (selectedLocationTypes.length > 0) {
+        params.append("locationTypes", selectedLocationTypes.join(","))
+      }
+      if (ministryOfSports) {
+        params.append("ministryOfSports", "true")
+      }
+      const response = await fetch(`/api/facilities/stats/regions?${params.toString()}`)
+      if (!response.ok) {
+        throw new Error("Failed to fetch region statistics")
+      }
+      const data: RegionStats = await response.json()
+      setFacilityData(data.facilityData)
+      setTotalFacilities(data.totalFacilities)
+    } catch (err) {
+      console.error("Error fetching region stats:", err)
+      setError("Failed to load region statistics")
+      toast.error("Failed to load region statistics")
+      // Set fallback data
+      const fallbackData: Record<string, number> = {
+        "SA-01": 45,
+        "SA-02": 32,
+        "SA-03": 28,
+        "SA-04": 18,
+        "SA-05": 15,
+        "SA-06": 22,
+        "SA-07": 12,
+        "SA-08": 8,
+        "SA-09": 14,
+        "SA-10": 25,
+        "SA-11": 19,
+        "SA-12": 16,
+        "SA-13": 11,
+      }
+      setFacilityData(fallbackData)
+      setTotalFacilities(Object.values(fallbackData).reduce((sum, count) => sum + count, 0))
+    } finally {
+      setIsLoading(false)
+    }
+  }, [selectedSports, selectedFacilityTypes, selectedLocationTypes, ministryOfSports])
+
+  // Fetch data when filters change
   useEffect(() => {
-    // Add event listeners to SVG paths when the component mounts
-    const addEventListeners = () => {
-      if (svgRef.current) {
-        const paths = svgRef.current.querySelectorAll('path[id^="SA-"]')
+    fetchRegionStats()
+  }, [fetchRegionStats])
+
+  // Function to handle SVG path or list item click
+  const handleRegionClick = useCallback(
+    (regionId: string) => {
+      // If the clicked region is already selected, deselect it. Otherwise, select it.
+      if (selectedLocationTypes.includes(regionId)) {
+        setSelectedLocationTypes([]) // Deselect
+      } else {
+        setSelectedLocationTypes([regionId]) // Select this region
+      }
+    },
+    [selectedLocationTypes, setSelectedLocationTypes],
+  )
+
+  // Function to handle SVG initialization and add event listeners
+  useEffect(() => {
+    const paths = svgRef.current?.querySelectorAll('path[id^="SA-"]')
+    if (!paths) return
+
+    const handleMouseEnter = (e: Event) => {
+      const target = e.target as SVGPathElement
+      setActiveRegion(target.id)
+      setShowTooltip(true)
+    }
+    const handleMouseMove = (e: Event) => {
+      const svgRect = svgRef.current!.getBoundingClientRect()
+      setTooltipPosition({
+        x: (e as MouseEvent).clientX - svgRect.left,
+        y: (e as MouseEvent).clientY - svgRect.top,
+      })
+    }
+    const handleMouseLeave = () => {
+      setShowTooltip(false)
+      setActiveRegion(null)
+    }
+    const handleClick = (e: Event) => {
+      const target = e.target as SVGPathElement
+      handleRegionClick(target.id)
+    }
+
+    if (!isLoading) {
+      paths.forEach((path) => {
+        path.addEventListener("mouseenter", handleMouseEnter)
+        path.addEventListener("mousemove", handleMouseMove)
+        path.addEventListener("mouseleave", handleMouseLeave)
+        path.addEventListener("click", handleClick)
+      })
+    }
+
+    // Cleanup function to remove event listeners
+    return () => {
+      if (!isLoading) {
         paths.forEach((path) => {
-          path.addEventListener("mouseenter", (e) => {
-            const target = e.target as SVGPathElement
-            setActiveRegion(target.id)
-            setShowTooltip(true)
-          })
-
-          path.addEventListener("mousemove", (e) => {
-            const svgRect = svgRef.current!.getBoundingClientRect()
-            setTooltipPosition({
-              x: (e as MouseEvent).clientX - svgRect.left,
-              y: (e as MouseEvent).clientY - svgRect.top,
-            })
-          })
-
-          path.addEventListener("mouseleave", () => {
-            setShowTooltip(false)
-            setActiveRegion(null)
-          })
+          path.removeEventListener("mouseenter", handleMouseEnter)
+          path.removeEventListener("mousemove", handleMouseMove)
+          path.removeEventListener("mouseleave", handleMouseLeave)
+          path.removeEventListener("click", handleClick)
         })
       }
     }
-
-    // Call the function to add event listeners
-    addEventListeners()
-  }, [])
+  }, [isLoading, handleRegionClick])
 
   // Get color for a region with opacity adjustment when another region is hovered
   const getRegionColor = (regionId: string) => {
     if (!regionColors[regionId]) return "#E5E7EB"
-    // If there's an active region and it's not this one, reduce opacity
     if (activeRegion && activeRegion !== regionId) {
-      return `${regionColors[regionId].base}40` // 40 = 25% opacity in hex
+      return `${regionColors[regionId].base}40`
     }
-    // Always use base color, no darker shade on hover
     return regionColors[regionId].base
+  }
+
+  // Check if any filters are active
+  const hasActiveFilters =
+    selectedSports.length > 0 ||
+    selectedFacilityTypes.length > 0 ||
+    selectedLocationTypes.length > 0 ||
+    ministryOfSports
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="w-full h-fit sm:mt-0 mt-12">
+        <Card className="p-6 flex items-center justify-center min-h-[400px]">
+          <div className="flex flex-col items-center gap-3">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <p className="text-muted-foreground">
+              {hasActiveFilters ? "Applying filters..." : "Loading region statistics..."}
+            </p>
+          </div>
+        </Card>
+      </div>
+    )
+  }
+
+  // Error state with retry option
+  if (error) {
+    return (
+      <div className="w-full h-fit sm:mt-0 mt-12">
+        <Card className="p-6 flex items-center justify-center min-h-[400px]">
+          <div className="flex flex-col items-center gap-3">
+            <p className="text-destructive font-medium">Error loading map</p>
+            <p className="text-muted-foreground text-sm">{error}</p>
+            <button onClick={fetchRegionStats} className="text-primary hover:text-primary/80 text-sm underline">
+              Try again
+            </button>
+            <p className="text-xs text-muted-foreground mt-2">Using sample data for now</p>
+          </div>
+        </Card>
+      </div>
+    )
   }
 
   if (!regionsData?.regions || regionsData.regions.length === 0) {
@@ -113,19 +251,36 @@ export default function InteractiveSaudiMap() {
 
   return (
     <div className="w-full h-fit sm:mt-0 mt-12">
-      {/* Mobile header with total facilities */}
+      {/* Mobile header with total facilities and filter status */}
       <div className="xl:hidden mb-4">
         <Card className="p-3">
           <div className="flex items-center justify-between">
             <h3 className="font-semibold text-base">Saudi Arabia Map</h3>
-            <Badge variant="secondary" className="text-xs">
-              {totalFacilities} Total Facilities
-            </Badge>
+            <div className="flex items-center gap-2">
+              {hasActiveFilters && (
+                <Badge variant="outline" className="text-xs bg-lime-100 text-lime-800 border-lime-300">
+                  Filtered
+                </Badge>
+              )}
+              <Badge variant="secondary" className="text-xs">
+                {totalFacilities} Total Facilities
+              </Badge>
+            </div>
           </div>
-          <p className="text-xs text-muted-foreground mt-1">Tap regions to explore</p>
+          <div className="flex items-center justify-between mt-1">
+            <p className="text-xs text-muted-foreground">Tap regions to explore</p>
+            {hasActiveFilters && (
+              <button
+                onClick={clearAllFilters}
+                className="text-xs text-lime-600 hover:text-lime-800 underline flex items-center gap-1"
+              >
+                <RotateCcw className="h-3 w-3" />
+                Clear filters
+              </button>
+            )}
+          </div>
         </Card>
       </div>
-
       <div className="flex flex-col xl:flex-row gap-6 h-full">
         <div className="relative flex-grow min-h-0">
           {/* SVG Map */}
@@ -171,6 +326,7 @@ export default function InteractiveSaudiMap() {
                   role="button"
                   tabIndex={0}
                   aria-label={`${region.name} region - ${facilityData[region.id] || 0} facilities`}
+                  onClick={() => handleRegionClick(region.id)} // Add onClick handler
                 >
                   <title>
                     {region.name} - {facilityData[region.id] || 0} facilities
@@ -179,7 +335,6 @@ export default function InteractiveSaudiMap() {
               ))}
             </g>
           </svg>
-
           {/* Tooltip with facility count */}
           {showTooltip && activeRegion && (
             <div
@@ -195,58 +350,92 @@ export default function InteractiveSaudiMap() {
             </div>
           )}
         </div>
-
         {/* Desktop Legend - Hidden on mobile */}
         <div className="hidden xl:block xl:w-64 flex-shrink-0">
           <Card className="p-3 h-fit">
             <div className="flex items-center justify-between">
               <h3 className="font-semibold text-base">KSA Regions</h3>
-              <Badge variant="secondary" className="text-xs">
-                {totalFacilities}
-              </Badge>
+              <div className="flex items-center gap-2">
+                {hasActiveFilters && (
+                  <Badge variant="outline" className="text-xs bg-lime-100 text-lime-800 border-lime-300">
+                    Filtered
+                  </Badge>
+                )}
+                <Badge variant="secondary" className="text-xs">
+                  {totalFacilities}
+                </Badge>
+              </div>
             </div>
-            <div className="space-y-1">
-              {Object.entries(regionNames).map(([id, name]) => (
-                <div
-                  key={id}
-                  className={`flex items-center gap-2 p-1.5 rounded-md transition-all duration-200 cursor-pointer hover:bg-muted/50 ${
-                    activeRegion === id ? "bg-muted ring-1 ring-primary/20" : ""
-                  }`}
-                  onMouseEnter={() => setActiveRegion(id)}
-                  onMouseLeave={() => setActiveRegion(null)}
-                >
+            <div className="space-y-1 mt-3">
+              {Object.entries(regionNames)
+                .sort(([idA], [idB]) => {
+                  const countA = facilityData[idA] || 0
+                  const countB = facilityData[idB] || 0
+                  return countB - countA
+                })
+                .map(([id, name]) => (
                   <div
-                    className="w-3 h-3 rounded-full border border-white shadow-sm transition-all duration-200"
-                    style={{
-                      backgroundColor: regionColors[id].base,
-                      transform: activeRegion === id ? "scale(1.1)" : "scale(1)",
-                    }}
-                  />
-                  <span
-                    className={`text-xs font-medium transition-colors duration-200 flex-1 truncate ${
-                      activeRegion === id ? "text-primary" : "text-foreground"
+                    key={id}
+                    className={`flex items-center gap-2 p-1.5 rounded-md transition-all duration-200 cursor-pointer hover:bg-muted/50 ${
+                      activeRegion === id || selectedLocationTypes.includes(id) ? "bg-muted ring-1 ring-primary/20" : ""
                     }`}
+                    onMouseEnter={() => setActiveRegion(id)}
+                    onMouseLeave={() => setActiveRegion(null)}
+                    onClick={() => handleRegionClick(id)} // Add onClick handler
                   >
-                    {name}
-                  </span>
-                  <div className="flex items-center gap-1">
-                    <span className="text-xs text-muted-foreground">{facilityData[id] || 0}</span>
-                    <Badge
-                      variant="outline"
-                      className="text-xs px-1.5 py-0 h-5"
+                    <div
+                      className="w-3 h-3 rounded-full border border-white shadow-sm transition-all duration-200"
                       style={{
-                        borderColor: activeRegion === id ? regionColors[id].base : undefined,
-                        color: activeRegion === id ? regionColors[id].base : undefined,
+                        backgroundColor: regionColors[id].base,
+                        transform:
+                          activeRegion === id || selectedLocationTypes.includes(id) ? "scale(1.1)" : "scale(1)",
                       }}
+                    />
+                    <span
+                      className={`text-xs font-medium transition-colors duration-200 flex-1 truncate ${
+                        activeRegion === id || selectedLocationTypes.includes(id) ? "text-primary" : "text-foreground"
+                      }`}
                     >
-                      {id.replace("SA-", "")}
-                    </Badge>
+                      {name}
+                    </span>
+                    <div className="flex items-center gap-1">
+                      <span className="text-xs text-muted-foreground font-medium">{facilityData[id] || 0}</span>
+                      <Badge
+                        variant="outline"
+                        className="text-xs px-1.5 py-0 h-5"
+                        style={{
+                          borderColor:
+                            activeRegion === id || selectedLocationTypes.includes(id)
+                              ? regionColors[id].base
+                              : undefined,
+                          color:
+                            activeRegion === id || selectedLocationTypes.includes(id)
+                              ? regionColors[id].base
+                              : undefined,
+                        }}
+                      >
+                        {id.replace("SA-", "")}
+                      </Badge>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
             </div>
             <div className="mt-3 pt-2 border-t">
-              <p className="text-xs text-muted-foreground">Hover to highlight</p>
+              <div className="flex items-center justify-between">
+                <p className="text-xs text-muted-foreground">Hover to highlight regions</p>
+                {hasActiveFilters && (
+                  <button
+                    onClick={clearAllFilters}
+                    className="text-xs text-lime-600 hover:text-lime-800 underline flex items-center gap-1"
+                  >
+                    <RotateCcw className="h-3 w-3" />
+                    Clear
+                  </button>
+                )}
+              </div>
+              <button onClick={fetchRegionStats} className="text-xs text-primary hover:text-primary/80 underline mt-1">
+                Refresh data
+              </button>
             </div>
           </Card>
         </div>

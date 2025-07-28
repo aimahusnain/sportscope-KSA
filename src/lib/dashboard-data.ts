@@ -1,5 +1,5 @@
-// ksaRegionsData is already imported from data/ksa-regions-svg.json in app/page.tsx
-// We will re-export it here for consistency.
+import prisma from "./prisma"
+import { KSARegion } from "@prisma/client"
 import ksaRegionsData from "../data/ksa-regions-svg.json"
 
 // Extract region names and create lookup objects
@@ -27,7 +27,25 @@ export const regionColors: Record<string, { base: string; hover: string }> = {
   "SA-13": { base: "#80B918", hover: "#8BC34A" },
 }
 
-// Sample data structure with historical data
+// Explicit mapping from SA-XX IDs to KSARegion enum values
+// This ensures correct enum values are used for Prisma queries
+export const regionIdToKsaRegionEnum: Record<string, KSARegion> = {
+  "SA-01": KSARegion.RIYADH,
+  "SA-02": KSARegion.MAKKAH,
+  "SA-04": KSARegion.EASTERN_PROVINCE,
+  "SA-13": KSARegion.ASIR,
+  "SA-07": KSARegion.TABUK,
+  "SA-05": KSARegion.QASSIM,
+  "SA-06": KSARegion.HAIL,
+  "SA-08": KSARegion.NORTHERN_BORDERS,
+  "SA-09": KSARegion.JAZAN,
+  "SA-10": KSARegion.NAJRAN,
+  "SA-11": KSARegion.AL_BAHAH,
+  "SA-12": KSARegion.AL_JOUF,
+  "SA-03": KSARegion.MADINAH,
+}
+
+// Sample data structure with historical data (kept for reference, not used in getDashboardData)
 export const sampleData = {
   "SA-01": {
     gap: 1250,
@@ -119,4 +137,95 @@ export const sampleData = {
       Female: { gap: 300, demand: 840, supply: 540, percentage: 40 },
     },
   },
+}
+
+export async function getDashboardData(regionId?: KSARegion) {
+  try {
+    // Get all facilities with their relations, optionally filtered by region
+    const facilities = await prisma.facility.findMany({
+      where: regionId ? { region: regionId } : {}, // Add region filter here
+      include: {
+        facilityType: true,
+        sports: true,
+      },
+    })
+
+    // Calculate facility types distribution
+    const facilityTypesData = facilities.reduce(
+      (acc, facility) => {
+        const typeName = facility.facilityType.name
+        acc[typeName] = (acc[typeName] || 0) + 1
+        return acc
+      },
+      {} as Record<string, number>,
+    )
+
+    // Calculate sports distribution (by participant count - using facilities as proxy)
+    const sportsData = facilities.reduce(
+      (acc, facility) => {
+        facility.sports.forEach((sport) => {
+          acc[sport.name] = (acc[sport.name] || 0) + 1
+        })
+        return acc
+      },
+      {} as Record<string, number>,
+    )
+
+    // Calculate facilities by region
+    const regionData = facilities.reduce(
+      (acc, facility) => {
+        const region = facility.region
+        acc[region] = (acc[region] || 0) + 1
+        return acc
+      },
+      {} as Record<KSARegion, number>,
+    )
+
+    // Calculate top sports by facility count
+    const topSportsData = Object.entries(sportsData)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 8)
+      .reduce(
+        (acc, [sport, count]) => {
+          acc[sport] = count
+          return acc
+        },
+        {} as Record<string, number>,
+      )
+
+    // Calculate total stats
+    const totalFacilities = facilities.length
+    const totalSports = Object.keys(sportsData).length
+    const totalRegions = Object.keys(regionData).length
+    // Get average rating
+    const facilitiesWithRating = facilities.filter((f) => f.rating !== null)
+    const averageRating =
+      facilitiesWithRating.length > 0
+        ? facilitiesWithRating.reduce((sum, f) => sum + (f.rating || 0), 0) / facilitiesWithRating.length
+        : 0
+
+    return {
+      facilityTypes: facilityTypesData,
+      sports: sportsData,
+      regions: regionData,
+      topSports: topSportsData,
+      stats: {
+        totalFacilities,
+        totalSports,
+        totalRegions,
+        averageRating: Math.round(averageRating * 10) / 10,
+      },
+    }
+  } catch (error) {
+    console.error("Error fetching dashboard data:", error)
+    throw new Error("Failed to fetch dashboard data")
+  }
+}
+
+// Helper function to format region names for display
+export function formatRegionName(region: KSARegion): string {
+  return region
+    .replace(/_/g, " ")
+    .toLowerCase()
+    .replace(/\b\w/g, (l) => l.toUpperCase())
 }

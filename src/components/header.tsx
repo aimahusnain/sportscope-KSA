@@ -1,19 +1,39 @@
 "use client";
-
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Bell, Calendar, Menu, Search } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Menu, User, LogOut } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import { ThemeToggle } from "./theme-toggler";
 import { usePathname } from "next/navigation";
+import { useSession, signOut } from "next-auth/react";
 
 export default function Header() {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
+  const { data: session, status } = useSession();
   const hideHeader = pathname === "/login" || pathname === "/signup";
+
+  // Get user's first letter
+  const getUserInitial = () => {
+    if (session?.user?.name) {
+      return session.user.name.charAt(0).toUpperCase();
+    }
+    return "U"; // Default fallback
+  };
+
+  // Handle logout
+  const handleLogout = async () => {
+    await signOut({ callbackUrl: "/login" });
+  };
+
+  // Show loading state or return early if no session
+  if (status === "loading") {
+    return null; // Or a loading spinner
+  }
 
   return (
     <>
@@ -44,75 +64,75 @@ export default function Header() {
               </Link>
             </div>
 
-            {/* Center Section - Search Bar (Hidden on mobile) */}
-            <div className="hidden lg:flex flex-1 justify-center px-8 max-w-md mx-auto">
-              <div className="relative w-full">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-zinc-400" />
-                <Input
-                  type="text"
-                  placeholder="Search..."
-                  className="pl-10 pr-4 h-9 text-sm border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white rounded-lg focus:ring-2 focus:ring-lime-500 focus:border-lime-500 dark:focus:ring-lime-400 dark:focus:border-lime-400"
-                />
-              </div>
-            </div>
-
-            {/* Right Section - Desktop Navigation */}
-            <div className="hidden lg:flex items-center space-x-2">
-              {/* Navigation Links */}
-              <nav className="flex items-center space-x-1">
-                <Button asChild variant="ghost" size="sm">
+            {/* Center Section - Navigation Links */}
+            <div className="hidden lg:flex flex-1 justify-center">
+              <nav className="flex items-center space-x-5">
+                <Button asChild size="sm" variant="outline">
                   <Link href="/" className="text-sm font-medium">
                     Dashboard
                   </Link>
                 </Button>
-                <Button asChild variant="ghost" size="sm">
+                <Button asChild size="sm" variant="outline">
                   <Link href="/data-manager" className="text-sm font-medium">
                     Data Manager
                   </Link>
                 </Button>
-                <Button asChild variant="ghost" size="sm">
-                  <Link href="#" className="text-sm font-medium">
-                    Wallet
-                  </Link>
-                </Button>
-                <Button asChild variant="ghost" size="sm">
-                  <Link href="#" className="text-sm font-medium">
-                    Map
-                  </Link>
-                </Button>
               </nav>
+            </div>
 
+            {/* Right Section - Desktop Navigation */}
+            <div className="hidden lg:flex items-center space-x-2">
               {/* Action Icons */}
               <div className="flex items-center space-x-1 ml-4">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="w-9 h-9 p-0 hover:bg-black/10 hover:dark:bg-white/10"
-                >
-                  <Calendar className="w-4 h-4" />
-                </Button>
-
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="w-9 h-9 p-0 hover:bg-black/10 hover:dark:bg-white/10 relative"
-                >
-                  <Bell className="w-4 h-4" />
-                  <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full text-xs"></span>
-                </Button>
-
                 <ThemeToggle />
-
                 <div className="ml-2">
-                  <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-zinc-200 dark:border-zinc-700">
-                    <Image
-                      src="/placeholder.svg?height=32&width=32"
-                      alt="User profile"
-                      width={32}
-                      height={32}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button className="w-8 h-8 rounded-full overflow-hidden border-2 border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 transition-colors cursor-pointer flex items-center justify-center bg-gradient-to-br from-lime-500 to-lim-600 text-white font-semibold text-sm">
+                        {session?.user?.image ? (
+                          <Image
+                            src={session.user.image}
+                            alt="User profile"
+                            width={32}
+                            height={32}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <span>{getUserInitial()}</span>
+                        )}
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-48 p-2" align="end">
+                      <div className="flex flex-col space-y-1">
+                        <div className="px-3 py-2 border-b border-zinc-200 dark:border-zinc-700">
+                          <p className="text-sm font-medium text-zinc-900 dark:text-white">
+                            {session?.user?.name || "User"}
+                          </p>
+                          <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                            {session?.user?.email || ""}
+                          </p>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          className="w-full justify-start h-10 px-3"
+                          asChild
+                        >
+                          <Link href="/account">
+                            <User className="w-4 h-4 mr-2" />
+                            Account
+                          </Link>
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          className="w-full justify-start h-10 px-3 text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-950"
+                          onClick={handleLogout}
+                        >
+                          <LogOut className="w-4 h-4 mr-2" />
+                          Logout
+                        </Button>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
                 </div>
               </div>
             </div>
@@ -121,7 +141,6 @@ export default function Header() {
             <div className="flex lg:hidden items-center space-x-2">
               {/* Theme Toggle */}
               <ThemeToggle />
-
               {/* Mobile Menu */}
               <Sheet open={isOpen} onOpenChange={setIsOpen}>
                 <SheetTrigger asChild>
@@ -141,19 +160,6 @@ export default function Header() {
                         Menu
                       </h2>
                     </div>
-
-                    {/* Mobile Search */}
-                    <div className="py-4">
-                      <div className="relative">
-                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-zinc-400" />
-                        <Input
-                          type="text"
-                          placeholder="Search..."
-                          className="pl-10 pr-4 h-12 text-base border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 rounded-lg focus:ring-2 focus:ring-lime-500 focus:border-lime-500"
-                        />
-                      </div>
-                    </div>
-
                     {/* Mobile Navigation */}
                     <nav className="flex flex-col space-y-3 py-2 flex-1">
                       <Button
@@ -172,64 +178,66 @@ export default function Header() {
                       >
                         <Link href="/data-manager">Data Manager</Link>
                       </Button>
-                      <Button
-                        asChild
-                        variant="ghost"
-                        className="justify-start h-12 text-base px-4 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800"
-                        onClick={() => setIsOpen(false)}
-                      >
-                        <Link href="#">Wallet</Link>
-                      </Button>
-                      <Button
-                        asChild
-                        variant="ghost"
-                        className="justify-start h-12 text-base px-4 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800"
-                        onClick={() => setIsOpen(false)}
-                      >
-                        <Link href="#">Map</Link>
-                      </Button>
                     </nav>
-
                     {/* Mobile Actions - Bottom Section */}
                     <div className="pt-6 border-t border-zinc-200 dark:border-zinc-700">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-4">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="w-12 h-12 p-0 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800"
-                          >
-                            <Calendar className="w-5 h-5" />
-                          </Button>
-
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="w-12 h-12 p-0 relative rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800"
-                          >
-                            <Bell className="w-5 h-5" />
-                            <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></span>
-                          </Button>
-                        </div>
-
+                      <div className="flex items-center justify-end">
                         <div className="flex items-center space-x-3">
                           <div className="text-right">
                             <p className="text-sm font-medium text-zinc-900 dark:text-white">
-                              John Doe
+                              {session?.user?.name || "User"}
                             </p>
                             <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                              john@example.com
+                              {session?.user?.email || ""}
                             </p>
                           </div>
-                          <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-zinc-200 dark:border-zinc-700">
-                            <Image
-                              src="/placeholder.svg?height=48&width=48"
-                              alt="User profile"
-                              width={48}
-                              height={48}
-                              className="w-full h-full object-cover"
-                            />
-                          </div>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <button className="w-12 h-12 rounded-full overflow-hidden border-2 border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 transition-colors cursor-pointer flex items-center justify-center bg-gradient-to-br from-lime-500 to-lime-600 text-white font-semibold">
+                                {session?.user?.image ? (
+                                  <Image
+                                    src={session.user.image}
+                                    alt="User profile"
+                                    width={48}
+                                    height={48}
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <span className="text-lg">{getUserInitial()}</span>
+                                )}
+                              </button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-48 p-2" align="end">
+                              <div className="flex flex-col space-y-1">
+                                <div className="px-3 py-2 border-b border-zinc-200 dark:border-zinc-700">
+                                  <p className="text-sm font-medium text-zinc-900 dark:text-white">
+                                    {session?.user?.name || "User"}
+                                  </p>
+                                  <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                                    {session?.user?.email || ""}
+                                  </p>
+                                </div>
+                                <Button
+                                  variant="ghost"
+                                  className="w-full justify-start h-10 px-3"
+                                  asChild
+                                >
+                                  <Link href="/account">
+                                    <User className="w-4 h-4 mr-2" />
+                                    Account
+                                  </Link>
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  className="w-full justify-start h-10 px-3 text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-950"
+                                  onClick={handleLogout}
+                                >
+                                  <LogOut className="w-4 h-4 mr-2" />
+                                  Logout
+                                </Button>
+                              </div>
+                            </PopoverContent>
+                          </Popover>
                         </div>
                       </div>
                     </div>

@@ -9,18 +9,79 @@ export async function getSports() {
   try {
     const sports = await prisma.sport.findMany({
       include: {
-        facilityType: true, // Include the related facility type
+        facilityType: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        _count: {
+          select: {
+            facilities: true,
+          },
+        },
       },
       orderBy: {
-        createdAt: "desc",
+        name: "asc",
       },
     })
+
     return sports
   } catch (error) {
-    console.error("Failed to fetch sports:", error)
+    console.error("Error fetching sports:", error)
     return []
   }
 }
+
+export async function getFacilityTypes() {
+  try {
+    const facilityTypes = await prisma.facilityType.findMany({
+      include: {
+        _count: {
+          select: {
+            sports: true,
+            facilities: true,
+          },
+        },
+      },
+      orderBy: {
+        name: "asc",
+      },
+    })
+
+    return facilityTypes
+  } catch (error) {
+    console.error("Error fetching facility types:", error)
+    return []
+  }
+}
+
+export async function getSportsByFacilityType(facilityTypeId: string) {
+  try {
+    const sports = await prisma.sport.findMany({
+      where: {
+        facilityTypeId: facilityTypeId,
+      },
+      include: {
+        facilityType: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+      orderBy: {
+        name: "asc",
+      },
+    })
+
+    return sports
+  } catch (error) {
+    console.error("Error fetching sports by facility type:", error)
+    return []
+  }
+}
+
 
 export async function addSport(name: string, facilityTypeId: string) {
   try {
@@ -86,26 +147,6 @@ export async function deleteAllSports() {
 }
 
 // --- Facility Type Actions ---
-
-export async function getFacilityTypes() {
-  try {
-    const facilityTypes = await prisma.facilityType.findMany({
-      orderBy: {
-        createdAt: "desc",
-      },
-      include: {
-        _count: {
-          select: { sports: true }, // Count connected sports
-        },
-      },
-    })
-    return facilityTypes
-  } catch (error) {
-    console.error("Failed to fetch facility types:", error)
-    return []
-  }
-}
-
 export async function addFacilityType(name: string) {
   try {
     const newFacilityType = await prisma.facilityType.create({
@@ -189,3 +230,4 @@ export async function deleteAllFacilityTypes() {
     return { success: false, message: error.message || "Failed to delete all facility types." }
   }
 }
+

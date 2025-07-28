@@ -17,18 +17,56 @@ model User {
 }
 
 model FacilityType {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  name      String   @unique
-  sports    Sport[]  @relation(fields: [], references: [])
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id         String     @id @default(auto()) @map("_id") @db.ObjectId
+  name       String     @unique
+  sports     Sport[]    @relation(fields: [], references: [])
+  facilities Facility[] // Relation to facilities
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
 }
 
 model Sport {
-  id             String        @id @default(auto()) @map("_id") @db.ObjectId
-  name           String        @unique
-  facilityTypeId String        @db.ObjectId
+  id             String       @id @default(auto()) @map("_id") @db.ObjectId
+  name           String       @unique
+  facilityTypeId String       @db.ObjectId
   facilityType   FacilityType @relation(fields: [facilityTypeId], references: [id])
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
+  // Many-to-many relationship with facilities
+  facilityIds    String[]     @db.ObjectId
+  facilities     Facility[]   @relation(fields: [facilityIds], references: [id])
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+}
+
+model Facility {
+  id             String       @id @default(auto()) @map("_id") @db.ObjectId
+  name           String?
+  facilityTypeId String?       @db.ObjectId
+  facilityType   FacilityType? @relation(fields: [facilityTypeId], references: [id])
+  region         KSARegion
+  country        String?
+  fullAddress    String?
+  rating         Float?       // Optional rating
+  reviewsNumber  Int?         // Optional reviews count
+  detailedUrl    String?      // Optional detailed URL
+  // Many-to-many relationship with sports
+  sportIds       String[]     @db.ObjectId
+  sports         Sport[]      @relation(fields: [sportIds], references: [id])
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+}
+
+enum KSARegion {
+  RIYADH
+  MAKKAH
+  MADINAH
+  EASTERN_PROVINCE
+  ASIR
+  TABUK
+  QASSIM
+  HAIL
+  NORTHERN_BORDERS
+  JAZAN
+  NAJRAN
+  AL_BAHAH
+  AL_JOUF
 }

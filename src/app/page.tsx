@@ -1,34 +1,28 @@
-// page.tsx (or your main page file) - Server Component
-import Header from "@/components/header";
+import DashboardperFacilityType from "@/components/dashboard-per-facility-type";
+import DashboardPerRegions from "@/components/dashboard-per-regions";
 import InteractiveSaudiMap from "@/components/saudi-map";
 import Sidebar from "@/components/sidebar";
-import { getSports, getFacilityTypes } from "@/lib/sports";
+import { FilterProvider } from "@/contexts/filter-context";
+import { getFacilityTypes, getSports } from "@/lib/sports";
 
-// This is now a Server Component (no "use client")
 export default async function FilterSidebar() {
-  // Fetch both sports and facility types data on the server
   const [sports, facilityTypes] = await Promise.all([
     getSports(),
-    getFacilityTypes()
+    getFacilityTypes(),
   ]);
-  
+
   return (
-    <div className="min-h-screen bg-background">
-      <div className="flex">
-        {/* Pass both sports and facility types data as props to the client component */}
-        <Sidebar sports={sports} facilityTypes={facilityTypes} />
-        <div className="flex-1 min-h-[calc(100vh-64px)] bg-background/95 backdrop-blur p-4">
-          <InteractiveSaudiMap />
-          <section className="w-full mt-10">
-            <div className="w-full max-w-full border border-white/20 dark:border-white/20 rounded-2xl px-5 py-10 bg-transparent shadow-lg">
-              <h1 className="text-2xl font-extrabold tracking-tight lg:text-4xl text-left">
-                Dashboard per region
-              </h1>
-              {/* You can add more content here */}
-            </div>
-          </section>
+    <FilterProvider>
+      <div className="max-h-full min-h-full bg-background">
+        <div className="flex">
+          <Sidebar sports={sports} facilityTypes={facilityTypes} />
+          <div className="flex-1 bg-background/95 backdrop-blur p-4">
+            <InteractiveSaudiMap />
+            <DashboardPerRegions />
+            <DashboardperFacilityType />
+          </div>
         </div>
       </div>
-    </div>
+    </FilterProvider>
   );
 }
