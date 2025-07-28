@@ -1,8 +1,9 @@
-import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { NextResponse } from "next/server"
 
-export async function GET(request: Request, { params }: { params: { id: string } }) {
+export async function GET(request: Request, context: { params: Promise<{ id: string }> }) {
   try {
+    const params = await context.params
     const facility = await prisma.facility.findUnique({
       where: { id: params.id },
       include: {
@@ -20,11 +21,11 @@ export async function GET(request: Request, { params }: { params: { id: string }
         },
       },
     })
-
+    
     if (!facility) {
       return NextResponse.json({ error: "Facility not found" }, { status: 404 })
     }
-
+    
     return NextResponse.json(facility)
   } catch (error) {
     console.error("Error fetching facility:", error)
@@ -32,10 +33,10 @@ export async function GET(request: Request, { params }: { params: { id: string }
   }
 }
 
-export async function PUT(request: Request, { params }: { params: { id: string } }) {
+export async function PUT(request: Request, context: { params: Promise<{ id: string }> }) {
   try {
+    const params = await context.params
     const body = await request.json()
-
     const {
       name,
       facilityTypeId,
@@ -123,7 +124,6 @@ export async function PUT(request: Request, { params }: { params: { id: string }
         const sport = await prisma.sport.findUnique({
           where: { id: sportId },
         })
-
         if (sport) {
           const updatedFacilityIds = sport.facilityIds.filter((id) => id !== params.id)
           await prisma.sport.update({
@@ -143,7 +143,6 @@ export async function PUT(request: Request, { params }: { params: { id: string }
         const sport = await prisma.sport.findUnique({
           where: { id: sportId },
         })
-
         if (sport && !sport.facilityIds.includes(params.id)) {
           await prisma.sport.update({
             where: { id: sportId },
@@ -162,8 +161,10 @@ export async function PUT(request: Request, { params }: { params: { id: string }
   }
 }
 
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(request: Request, context: { params: Promise<{ id: string }> }) {
   try {
+    const params = await context.params
+    
     // Check if facility exists and get its sports
     const existingFacility = await prisma.facility.findUnique({
       where: { id: params.id },
@@ -180,7 +181,6 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
         const currentSport = await prisma.sport.findUnique({
           where: { id: sport.id },
         })
-
         if (currentSport) {
           const updatedFacilityIds = currentSport.facilityIds.filter((id) => id !== params.id)
           await prisma.sport.update({

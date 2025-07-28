@@ -153,8 +153,11 @@ export async function getDashboardData(regionId?: KSARegion) {
     // Calculate facility types distribution
     const facilityTypesData = facilities.reduce(
       (acc, facility) => {
-        const typeName = facility.facilityType.name
-        acc[typeName] = (acc[typeName] || 0) + 1
+        // Add null check for facilityType
+        if (facility.facilityType) {
+          const typeName = facility.facilityType.name
+          acc[typeName] = (acc[typeName] || 0) + 1
+        }
         return acc
       },
       {} as Record<string, number>,
@@ -163,9 +166,14 @@ export async function getDashboardData(regionId?: KSARegion) {
     // Calculate sports distribution (by participant count - using facilities as proxy)
     const sportsData = facilities.reduce(
       (acc, facility) => {
-        facility.sports.forEach((sport) => {
-          acc[sport.name] = (acc[sport.name] || 0) + 1
-        })
+        // Add null check for sports array
+        if (facility.sports && facility.sports.length > 0) {
+          facility.sports.forEach((sport) => {
+            if (sport) { // Additional safety check
+              acc[sport.name] = (acc[sport.name] || 0) + 1
+            }
+          })
+        }
         return acc
       },
       {} as Record<string, number>,
@@ -175,7 +183,9 @@ export async function getDashboardData(regionId?: KSARegion) {
     const regionData = facilities.reduce(
       (acc, facility) => {
         const region = facility.region
-        acc[region] = (acc[region] || 0) + 1
+        if (region) { // Add null check for region
+          acc[region] = (acc[region] || 0) + 1
+        }
         return acc
       },
       {} as Record<KSARegion, number>,
@@ -197,8 +207,9 @@ export async function getDashboardData(regionId?: KSARegion) {
     const totalFacilities = facilities.length
     const totalSports = Object.keys(sportsData).length
     const totalRegions = Object.keys(regionData).length
+    
     // Get average rating
-    const facilitiesWithRating = facilities.filter((f) => f.rating !== null)
+    const facilitiesWithRating = facilities.filter((f) => f.rating !== null && f.rating !== undefined)
     const averageRating =
       facilitiesWithRating.length > 0
         ? facilitiesWithRating.reduce((sum, f) => sum + (f.rating || 0), 0) / facilitiesWithRating.length
