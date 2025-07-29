@@ -3,10 +3,10 @@
 import { FacilitiesByRegionChart } from "@/components/charts/facilities-by-region-chart";
 import { FacilityTypesChart } from "@/components/charts/facility-types-chart";
 import { TopSportsByFacilityChart } from "@/components/charts/top-sports-by-facility-chart";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, } from "@/components/ui/card";
 import { useFilters } from "@/contexts/filter-context";
 import { regionNames } from "@/lib/dashboard-data"; // Import regionNames for display
-import { Building2, Loader2, MapPin, Trophy } from "lucide-react";
+import { Loader2, } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
