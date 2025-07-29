@@ -98,21 +98,7 @@ console.log("Sidebar rendered with sports:",showButton)
     )
   }
 
-  const selectAllSports = () => {
-    if (selectedSports.length === sports.length) {
-      setSelectedSports([])
-    } else {
-      setSelectedSports(sports.map((sport) => sport.name))
-    }
-  }
-
-  const selectAllFacilityTypes = () => {
-    if (selectedFacilityTypes.length === facilityTypes.length) {
-      setSelectedFacilityTypes([])
-    } else {
-      setSelectedFacilityTypes(facilityTypes.map((facilityType) => facilityType.name))
-    }
-  }
+ 
 
   // Calculate total selected filters
   const totalFilters =

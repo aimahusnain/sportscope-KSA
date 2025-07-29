@@ -35,8 +35,38 @@ const regionIdToKsaRegionEnum: Record<string, KSARegion> = {
   "SA-03": "MADINAH",
 }
 
+// Type definitions for better type safety
+interface CacheEntry<T> {
+  data: T;
+  timestamp: number;
+}
+
+interface WhereClause {
+  region?: KSARegion;
+  facilityType?: {
+    name: {
+      in: string[];
+    };
+  };
+  sports?: {
+    some: {
+      name: {
+        in: string[];
+      };
+    };
+  };
+  locationType?: {
+    in: string[];
+  };
+  ministryOfSports?: boolean;
+}
+
+interface RegionData {
+  [key: string]: number;
+}
+
 // Simple in-memory cache
-const cache = new Map<string, { data: any; timestamp: number }>()
+const cache = new Map<string, CacheEntry<unknown>>()
 const CACHE_DURATION = 5 * 60 * 1000 // 5 minutes
 
 export async function GET(request: Request) {
@@ -75,7 +105,7 @@ export async function GET(request: Request) {
     }
 
     // Build where clause for filtering
-    const whereClause: any = {}
+    const whereClause: WhereClause = {}
 
     // Region filter
     if (ksaRegion) {
@@ -237,7 +267,7 @@ export async function GET(request: Request) {
     })
 
     // Process region data
-    const regionData: any = {}
+    const regionData: RegionData = {}
     regionDataRaw.forEach((item) => {
       if (item.region) {
         regionData[item.region] = item._count.id

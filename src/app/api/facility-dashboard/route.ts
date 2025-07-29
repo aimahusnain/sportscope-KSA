@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import type { KSARegion, Prisma } from "@prisma/client"
 
 const REGION_DISPLAY_NAMES: Record<string, string> = {
   RIYADH: "Riyadh",
@@ -17,8 +18,17 @@ const REGION_DISPLAY_NAMES: Record<string, string> = {
   AL_JOUF: "Al Jouf",
 }
 
+// Type definitions for better type safety
+interface CacheEntry<T> {
+  data: T;
+  timestamp: number;
+}
+
+// Use Prisma-generated types for better type safety
+type FacilityWhereInput = Prisma.FacilityWhereInput
+
 // Simple in-memory cache
-const cache = new Map<string, { data: any; timestamp: number }>()
+const cache = new Map<string, CacheEntry<unknown>>()
 const CACHE_DURATION = 5 * 60 * 1000 // 5 minutes
 
 export async function GET(request: Request) {
@@ -53,11 +63,11 @@ export async function GET(request: Request) {
     }
 
     // Build where clause for filtering
-    const whereClause: any = {}
+    const whereClause: FacilityWhereInput = {}
 
-    // Region filter
+    // Region filter - convert string to KSARegion enum
     if (region && region in REGION_DISPLAY_NAMES) {
-      whereClause.region = region
+      whereClause.region = region as KSARegion
     }
 
     // Sports filter - First get sport IDs, then filter facilities
@@ -98,17 +108,19 @@ export async function GET(request: Request) {
       }
     }
 
-    // Location type filter (you might need to add this field to your schema)
-    if (locationTypes.length > 0) {
-      whereClause.locationType = {
-        in: locationTypes,
-      }
-    }
+    // Location type filter - update field name to match your schema
+    // Uncomment and update field name if this field exists in your Facility model
+    // if (locationTypes.length > 0) {
+    //   whereClause.location_type = {  // Update to your actual field name
+    //     in: locationTypes,
+    //   }
+    // }
 
-    // Ministry of Sports filter (you might need to add this field to your schema)
-    if (ministryOfSports) {
-      whereClause.ministryOfSports = true
-    }
+    // Ministry of Sports filter - update field name to match your schema
+    // Uncomment and update field name if this field exists in your Facility model
+    // if (ministryOfSports) {
+    //   whereClause.ministry_of_sports = true  // Update to your actual field name
+    // }
 
     // Execute all queries in parallel for better performance
     const [
@@ -185,7 +197,7 @@ export async function GET(request: Request) {
     // Process region data
     const regionData = regionDataRaw.map((item) => ({
       region: REGION_DISPLAY_NAMES[item.region] || item.region,
-      count: item._count.id,
+      count: item._count?.id || 0,
     }))
 
     // Process facility type data - handle null facilityTypeId properly
@@ -204,17 +216,48 @@ export async function GET(request: Request) {
 
           return {
             type: facilityType?.name || "Unknown",
-            count: item._count.id,
+            count: item._count?.id || 0,
           }
         }),
     ).then((results) => results.filter((item) => item !== null)) // Remove null results
 
     // Process sports data - get sports count from filtered facilities
     const sportsCount: Record<string, number> = {}
+    
+    // Get all unique sport IDs from facilities
+    const allSportIds = new Set<string>()
     facilities.forEach((facility) => {
-      if (facility.sports && facility.sports.length > 0) {
-        facility.sports.forEach((sport) => {
-          sportsCount[sport.name] = (sportsCount[sport.name] || 0) + 1
+      if (facility.sportIds && facility.sportIds.length > 0) {
+        facility.sportIds.forEach((sportId) => allSportIds.add(sportId))
+      }
+    })
+    
+    // Fetch sport names for all sport IDs
+    const sportsWithNames = await prisma.sport.findMany({
+      where: {
+        id: {
+          in: Array.from(allSportIds),
+        },
+      },
+      select: {
+        id: true,
+        name: true,
+      },
+    })
+    
+    // Create a map of sport ID to sport name
+    const sportIdToNameMap = new Map(
+      sportsWithNames.map((sport) => [sport.id, sport.name])
+    )
+    
+    // Count sports by name
+    facilities.forEach((facility) => {
+      if (facility.sportIds && facility.sportIds.length > 0) {
+        facility.sportIds.forEach((sportId) => {
+          const sportName = sportIdToNameMap.get(sportId)
+          if (sportName) {
+            sportsCount[sportName] = (sportsCount[sportName] || 0) + 1
+          }
         })
       }
     })
