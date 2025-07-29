@@ -1,5 +1,4 @@
 import Boxesforthepage from "@/components/Boxesforthepage";
-import DashboardperFacilityType from "@/components/dashboard-per-facility-type";
 import DashboardPerRegions from "@/components/dashboard-per-regions";
 import InteractiveSaudiMap from "@/components/saudi-map";
 import Sidebar from "@/components/sidebar";
