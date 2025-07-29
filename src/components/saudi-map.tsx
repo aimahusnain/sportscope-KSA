@@ -361,9 +361,10 @@ export default function InteractiveSaudiMap() {
                     Filtered
                   </Badge>
                 )}
-                <Badge variant="secondary" className="text-xs">
-                  {totalFacilities}
-                </Badge>
+  <Badge variant="secondary" className="text-xs">
+    {totalFacilities}
+  </Badge>
+
               </div>
             </div>
             <div className="space-y-1 mt-3">
@@ -399,7 +400,9 @@ export default function InteractiveSaudiMap() {
                       {name}
                     </span>
                     <div className="flex items-center gap-1">
+<div title="Total number of facilities">
                       <span className="text-xs text-muted-foreground font-medium">{facilityData[id] || 0}</span>
+                      </div>
                       {/* I need no. of facilities instead of Sa-... */}
                       {/* <Badge
                         variant="outline"

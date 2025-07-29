@@ -1,7 +1,5 @@
 import { NextResponse } from "next/server"
-import { PrismaClient } from "@prisma/client"
-
-const prisma = new PrismaClient()
+import { prisma } from "@/lib/prisma"
 
 const REGION_DISPLAY_NAMES: Record<string, string> = {
   RIYADH: "Riyadh",
@@ -19,75 +17,212 @@ const REGION_DISPLAY_NAMES: Record<string, string> = {
   AL_JOUF: "Al Jouf",
 }
 
-export async function GET() {
-  try {
-    // Fetch all facilities with their related data
-    const facilities = await prisma.facility.findMany({
-      include: {
-        facilityType: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-        sports: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-    })
+// Simple in-memory cache
+const cache = new Map<string, { data: any; timestamp: number }>()
+const CACHE_DURATION = 5 * 60 * 1000 // 5 minutes
 
-    // Process data for charts
-    const regionDataMap: Record<string, { region: string; count: number }> = {};
-    for (const facility of facilities) {
-      const regionName = REGION_DISPLAY_NAMES[facility.region] || facility.region;
-      if (regionDataMap[regionName]) {
-        regionDataMap[regionName].count += 1;
+export async function GET(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url)
+    const page = Number.parseInt(searchParams.get("page") || "1")
+    const limit = Number.parseInt(searchParams.get("limit") || "50")
+    const region = searchParams.get("region") || undefined
+
+    // Get filter parameters
+    const sports = searchParams.get("sports")?.split(",").filter(Boolean) || []
+    const facilityTypes = searchParams.get("facilityTypes")?.split(",").filter(Boolean) || []
+    const locationTypes = searchParams.get("locationTypes")?.split(",").filter(Boolean) || []
+    const ministryOfSports = searchParams.get("ministryOfSports") === "true"
+
+    // Create cache key including filters
+    const cacheKey = `facility-dashboard-${page}-${limit}-${region || "all"}-${sports.join(",")}-${facilityTypes.join(",")}-${locationTypes.join(",")}-${ministryOfSports}`
+
+    const cached = cache.get(cacheKey)
+    if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+      return NextResponse.json(
+        {
+          success: true,
+          data: cached.data,
+        },
+        {
+          headers: {
+            "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
+          },
+        },
+      )
+    }
+
+    // Build where clause for filtering
+    const whereClause: any = {}
+
+    // Region filter
+    if (region && region in REGION_DISPLAY_NAMES) {
+      whereClause.region = region
+    }
+
+    // Sports filter - First get sport IDs, then filter facilities
+    if (sports.length > 0) {
+      // Find sports that match the selected sport names (case-insensitive)
+      const matchingSports = await prisma.sport.findMany({
+        where: {
+          name: {
+            in: sports,
+            mode: "insensitive",
+          },
+        },
+        select: {
+          id: true,
+        },
+      })
+
+      const sportIds = matchingSports.map((sport) => sport.id)
+
+      if (sportIds.length > 0) {
+        // Filter facilities that have any of these sport IDs in their sportIds array
+        whereClause.sportIds = {
+          hasSome: sportIds,
+        }
       } else {
-        regionDataMap[regionName] = { region: regionName, count: 1 };
+        // If no matching sports found, return empty results
+        whereClause.id = "non-existent-id" // This will return no results
       }
     }
-    const regionData = Object.values(regionDataMap);
 
-    type FacilityTypeData = { type: string; count: number };
-    const facilityTypeData = facilities.reduce<FacilityTypeData[]>((acc, facility) => {
-      if (facility.facilityType) {
-        const existing = acc.find((item) => item.type === facility.facilityType!.name)
-        if (existing) {
-          existing.count += 1
-        } else {
-          acc.push({
-            type: facility.facilityType.name,
-            count: 1,
-          })
-        }
+    // Facility types filter - check if facility's facilityType matches any selected types
+    if (facilityTypes.length > 0) {
+      whereClause.facilityType = {
+        name: {
+          in: facilityTypes,
+          mode: "insensitive",
+        },
       }
-      return acc
-    }, [])
+    }
 
-    // Process sports data (handle multiple sports per facility)
+    // Location type filter (you might need to add this field to your schema)
+    if (locationTypes.length > 0) {
+      whereClause.locationType = {
+        in: locationTypes,
+      }
+    }
+
+    // Ministry of Sports filter (you might need to add this field to your schema)
+    if (ministryOfSports) {
+      whereClause.ministryOfSports = true
+    }
+
+    // Execute all queries in parallel for better performance
+    const [
+      facilities,
+      regionDataRaw,
+      facilityTypeDataRaw,
+      totalCount,
+      totalFacilities,
+      totalRegions,
+      totalFacilityTypes,
+      totalSports,
+    ] = await Promise.all([
+      // Get paginated facilities
+      prisma.facility.findMany({
+        where: whereClause,
+        include: {
+          facilityType: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          sports: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      // Get region distribution using database aggregation
+      prisma.facility.groupBy({
+        by: ["region"],
+        where: whereClause,
+        _count: {
+          id: true,
+        },
+      }),
+      // Get facility type distribution - only for facilities that have a facilityTypeId
+      prisma.facility.groupBy({
+        by: ["facilityTypeId"],
+        where: {
+          ...whereClause,
+          facilityTypeId: {
+            not: null,
+          },
+        },
+        _count: {
+          id: true,
+        },
+      }),
+      // Get total count for pagination
+      prisma.facility.count({
+        where: whereClause,
+      }),
+      // Get summary statistics (unfiltered totals)
+      prisma.facility.count(),
+      // Count distinct regions
+      prisma.facility
+        .groupBy({
+          by: ["region"],
+          _count: { region: true },
+        })
+        .then((result) => result.length),
+      prisma.facilityType.count(),
+      prisma.sport.count(),
+    ])
+
+    // Process region data
+    const regionData = regionDataRaw.map((item) => ({
+      region: REGION_DISPLAY_NAMES[item.region] || item.region,
+      count: item._count.id,
+    }))
+
+    // Process facility type data - handle null facilityTypeId properly
+    const facilityTypeData = await Promise.all(
+      facilityTypeDataRaw
+        .filter((item) => item.facilityTypeId !== null) // Filter out null values
+        .map(async (item) => {
+          // Convert null to undefined for Prisma query
+          const facilityTypeId = item.facilityTypeId || undefined
+          if (!facilityTypeId) return null
+
+          const facilityType = await prisma.facilityType.findUnique({
+            where: { id: facilityTypeId },
+            select: { name: true },
+          })
+
+          return {
+            type: facilityType?.name || "Unknown",
+            count: item._count.id,
+          }
+        }),
+    ).then((results) => results.filter((item) => item !== null)) // Remove null results
+
+    // Process sports data - get sports count from filtered facilities
     const sportsCount: Record<string, number> = {}
     facilities.forEach((facility) => {
-      facility.sports.forEach((sport) => {
-        sportsCount[sport.name] = (sportsCount[sport.name] || 0) + 1
-      })
+      if (facility.sports && facility.sports.length > 0) {
+        facility.sports.forEach((sport) => {
+          sportsCount[sport.name] = (sportsCount[sport.name] || 0) + 1
+        })
+      }
     })
 
     const sportsData = Object.entries(sportsCount).map(([sport, count]) => ({
       sport,
       count,
     }))
-
-    // Get unique counts
-    const totalFacilities = facilities.length
-    const totalRegions = regionData.length
-    const totalFacilityTypes = facilityTypeData.length
-    const totalSports = sportsData.length
 
     // Prepare pie chart data with colors
     const pieData = regionData.map((item, index) => ({
@@ -96,26 +231,49 @@ export async function GET() {
       fill: `var(--chart-${(index % 5) + 1})`,
     }))
 
-    return NextResponse.json({
-      success: true,
-      data: {
-        facilities,
-        regionData,
-        facilityTypeData,
-        sportsData,
-        pieData,
-        summary: {
-          totalFacilities,
-          totalRegions,
-          totalFacilityTypes,
-          totalSports,
+    // Calculate pagination info
+    const totalPages = Math.ceil(totalCount / limit)
+    const hasNextPage = page < totalPages
+    const hasPrevPage = page > 1
+
+    const result = {
+      facilities,
+      regionData,
+      facilityTypeData,
+      sportsData,
+      pieData,
+      summary: {
+        totalFacilities,
+        totalRegions,
+        totalFacilityTypes,
+        totalSports,
+      },
+      pagination: {
+        currentPage: page,
+        totalPages,
+        totalCount,
+        hasNextPage,
+        hasPrevPage,
+        limit,
+      },
+    }
+
+    // Cache the result
+    cache.set(cacheKey, { data: result, timestamp: Date.now() })
+
+    return NextResponse.json(
+      {
+        success: true,
+        data: result,
+      },
+      {
+        headers: {
+          "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
         },
       },
-    })
+    )
   } catch (error) {
-    console.error("Error fetching dashboard data:", error)
-    return NextResponse.json({ success: false, error: "Failed to fetch dashboard data" }, { status: 500 })
-  } finally {
-    await prisma.$disconnect()
+    console.error("Error fetching facility dashboard data:", error)
+    return NextResponse.json({ success: false, error: "Failed to fetch facility dashboard data" }, { status: 500 })
   }
 }
