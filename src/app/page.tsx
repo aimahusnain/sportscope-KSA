@@ -21,7 +21,7 @@ export default async function FilterSidebar() {
           <Boxesforthepage />
             <InteractiveSaudiMap />
             <DashboardPerRegions />
-            <DashboardperFacilityType />
+            {/* <DashboardperFacilityType /> */}
           </div>
         </div>
       </div>
