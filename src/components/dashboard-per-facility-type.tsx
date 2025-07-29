@@ -7,6 +7,7 @@ import { Activity, AlertCircle, Loader2, MapPin, Target, RefreshCw } from "lucid
 import { useEffect, useState } from "react"
 import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, XAxis, YAxis, ResponsiveContainer } from "recharts"
 import { toast } from "sonner"
+import { useFilters } from "@/contexts/filter-context"
 
 interface DashboardData {
   facilities: Array<{
@@ -34,16 +35,45 @@ export default function FacilityDashboard() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    fetchDashboardData()
-  }, [])
+  // Get filters from context
+  const { selectedSports, selectedFacilityTypes, selectedLocationTypes, ministryOfSports, selectedRegionName } =
+    useFilters()
 
   const fetchDashboardData = async () => {
     try {
       setIsLoading(true)
       setError(null)
 
-      const response = await fetch("/api/facility-dashboard")
+      // Build query parameters based on filters
+      const params = new URLSearchParams()
+
+      // Add sports filter
+      if (selectedSports.length > 0) {
+        params.append("sports", selectedSports.join(","))
+      }
+
+      // Add facility types filter
+      if (selectedFacilityTypes.length > 0) {
+        params.append("facilityTypes", selectedFacilityTypes.join(","))
+      }
+
+      // Add location types filter
+      if (selectedLocationTypes.length > 0) {
+        params.append("locationTypes", selectedLocationTypes.join(","))
+      }
+
+      // Add ministry of sports filter
+      if (ministryOfSports) {
+        params.append("ministryOfSports", "true")
+      }
+
+      // Add region filter if selected from map or other sources
+      if (selectedRegionName) {
+        params.append("region", selectedRegionName)
+      }
+
+      const url = `/api/facility-dashboard${params.toString() ? `?${params.toString()}` : ""}`
+      const response = await fetch(url)
       const result = await response.json()
 
       if (result.success) {
@@ -61,9 +91,22 @@ export default function FacilityDashboard() {
     }
   }
 
+  // Fetch data on component mount and when filters change
+  useEffect(() => {
+    fetchDashboardData()
+  }, [selectedSports, selectedFacilityTypes, selectedLocationTypes, ministryOfSports, selectedRegionName])
+
   const handleRefresh = () => {
     fetchDashboardData()
   }
+
+  // Show active filters count
+  const activeFiltersCount =
+    selectedSports.length +
+    selectedFacilityTypes.length +
+    selectedLocationTypes.length +
+    (ministryOfSports ? 1 : 0) +
+    (selectedRegionName ? 1 : 0)
 
   if (isLoading) {
     return (
@@ -72,7 +115,11 @@ export default function FacilityDashboard() {
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
           <div>
             <h2 className="text-lg font-semibold">Loading Dashboard</h2>
-            <p className="text-sm text-muted-foreground">Please wait while we fetch your data...</p>
+            <p className="text-sm text-muted-foreground">
+              {activeFiltersCount > 0
+                ? `Applying ${activeFiltersCount} filter${activeFiltersCount > 1 ? "s" : ""}...`
+                : "Please wait while we fetch your data..."}
+            </p>
           </div>
         </div>
       </div>
@@ -111,7 +158,14 @@ export default function FacilityDashboard() {
               </div>
               <div>
                 <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold">Facility Dashboard</h1>
-                <p className="text-xs sm:text-sm text-muted-foreground">Saudi Arabia Sports Facilities</p>
+                <p className="text-xs sm:text-sm text-muted-foreground">
+                  Saudi Arabia Sports Facilities
+                  {activeFiltersCount > 0 && (
+                    <span className="ml-2 text-primary font-medium">
+                      • {activeFiltersCount} filter{activeFiltersCount > 1 ? "s" : ""} applied
+                    </span>
+                  )}
+                </p>
               </div>
             </div>
             <Button variant="outline" size="sm" onClick={handleRefresh} className="w-full sm:w-auto bg-transparent">
@@ -123,6 +177,8 @@ export default function FacilityDashboard() {
       </header>
 
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+
+
         {/* Overview Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
           <Card className="hover:shadow-md transition-shadow">
@@ -132,10 +188,11 @@ export default function FacilityDashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-xl sm:text-2xl font-bold">{summary.totalFacilities}</div>
-              <p className="text-xs text-muted-foreground">Sports facilities tracked</p>
+              <p className="text-xs text-muted-foreground">
+                {activeFiltersCount > 0 ? "Filtered results" : "Sports facilities tracked"}
+              </p>
             </CardContent>
           </Card>
-
           <Card className="hover:shadow-md transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-xs sm:text-sm font-medium">Regions</CardTitle>
@@ -146,7 +203,6 @@ export default function FacilityDashboard() {
               <p className="text-xs text-muted-foreground">Across Saudi Arabia</p>
             </CardContent>
           </Card>
-
           <Card className="hover:shadow-md transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-xs sm:text-sm font-medium">Facility Types</CardTitle>
@@ -157,7 +213,6 @@ export default function FacilityDashboard() {
               <p className="text-xs text-muted-foreground">Different facility types</p>
             </CardContent>
           </Card>
-
           <Card className="hover:shadow-md transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-xs sm:text-sm font-medium">Sports</CardTitle>
@@ -168,7 +223,7 @@ export default function FacilityDashboard() {
               <p className="text-xs text-muted-foreground">Sports categories</p>
             </CardContent>
           </Card>
-        </div>
+                              </div>
 
         {/* Charts Grid */}
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
@@ -212,7 +267,7 @@ export default function FacilityDashboard() {
                 <div className="h-[250px] sm:h-[300px] lg:h-[350px] flex items-center justify-center text-muted-foreground">
                   <div className="text-center">
                     <AlertCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                    <p className="text-sm">No data available</p>
+                    <p className="text-sm">No data available for current filters</p>
                   </div>
                 </div>
               )}
@@ -264,7 +319,7 @@ export default function FacilityDashboard() {
                 <div className="h-[250px] sm:h-[300px] lg:h-[350px] flex items-center justify-center text-muted-foreground">
                   <div className="text-center">
                     <AlertCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                    <p className="text-sm">No data available</p>
+                    <p className="text-sm">No data available for current filters</p>
                   </div>
                 </div>
               )}
@@ -311,7 +366,7 @@ export default function FacilityDashboard() {
                 <div className="h-[250px] sm:h-[300px] lg:h-[350px] flex items-center justify-center text-muted-foreground">
                   <div className="text-center">
                     <AlertCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                    <p className="text-sm">No data available</p>
+                    <p className="text-sm">No data available for current filters</p>
                   </div>
                 </div>
               )}
@@ -358,7 +413,7 @@ export default function FacilityDashboard() {
                 <div className="h-[250px] sm:h-[300px] lg:h-[350px] flex items-center justify-center text-muted-foreground">
                   <div className="text-center">
                     <AlertCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                    <p className="text-sm">No data available</p>
+                    <p className="text-sm">No data available for current filters</p>
                   </div>
                 </div>
               )}

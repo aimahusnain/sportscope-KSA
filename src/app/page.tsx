@@ -1,3 +1,4 @@
+import Boxesforthepage from "@/components/Boxesforthepage";
 import DashboardperFacilityType from "@/components/dashboard-per-facility-type";
 import DashboardPerRegions from "@/components/dashboard-per-regions";
 import InteractiveSaudiMap from "@/components/saudi-map";
@@ -17,6 +18,7 @@ export default async function FilterSidebar() {
         <div className="flex">
           <Sidebar sports={sports} facilityTypes={facilityTypes} />
           <div className="flex-1 bg-background/95 backdrop-blur p-4">
+          <Boxesforthepage />
             <InteractiveSaudiMap />
             <DashboardPerRegions />
             <DashboardperFacilityType />

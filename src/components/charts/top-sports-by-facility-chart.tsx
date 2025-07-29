@@ -30,7 +30,7 @@ export function TopSportsByFacilityChart({ data }: TopSportsByFacilityChartProps
   return (
     <Card className="h-full flex flex-col">
       <CardHeader className="pb-2">
-        <CardTitle className="text-xl font-semibold">Top Sports by Facility Count</CardTitle>
+        <CardTitle className="text-xl font-semibold">Sports by Facility Count</CardTitle>
         <CardDescription className="text-base">Number of facilities available per sport</CardDescription>
       </CardHeader>
       <CardContent className="flex-1 p-4">

@@ -1,15 +1,14 @@
 "use client"; // Make it a client component
 
-import { useState, useEffect, useCallback } from "react";
-import { FacilityTypesChart } from "@/components/charts/facility-types-chart";
-import { SportsDistributionChart } from "@/components/charts/sports-distribution-chart";
 import { FacilitiesByRegionChart } from "@/components/charts/facilities-by-region-chart";
+import { FacilityTypesChart } from "@/components/charts/facility-types-chart";
 import { TopSportsByFacilityChart } from "@/components/charts/top-sports-by-facility-chart";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Building2, MapPin, Trophy, Loader2 } from "lucide-react";
 import { useFilters } from "@/contexts/filter-context";
-import { toast } from "sonner";
 import { regionNames } from "@/lib/dashboard-data"; // Import regionNames for display
+import { Building2, Loader2, MapPin, Trophy } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
 
 interface DashboardData {
   facilityTypes: Record<string, number>;
@@ -113,53 +112,7 @@ export default function Dashboard() {
             coverage
           </p>
         </div>
-        {/* Stats Cards */}
-        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Total Facilities
-              </CardTitle>
-              <Building2 className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {data.stats.totalFacilities.toLocaleString()}
-              </div>
-              <p className="text-xs text-muted-foreground">Active facilities</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Sports Covered
-              </CardTitle>
-              <Trophy className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{data.stats.totalSports}</div>
-              <p className="text-xs text-muted-foreground">
-                Different sports available
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Active Regions
-              </CardTitle>
-              <MapPin className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {data.stats.totalRegions}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                KSA regions covered
-              </p>
-            </CardContent>
-          </Card>
-        </div>
+   
         {/* Charts Grid - Full width with responsive layout */}
         <div className="w-full grid gap-6 grid-cols-1 xl:grid-cols-2">
           {/* Facility Types - Top Left */}
@@ -167,18 +120,22 @@ export default function Dashboard() {
             <FacilityTypesChart data={data.facilityTypes} />
           </div>
           {/* Top Sports by Facility Count - Top Right */}
-          <div className="h-[500px] w-full">
-            <TopSportsByFacilityChart data={data.topSports} />
-          </div>
-          {/* Sports Distribution - Bottom Left */}
-          <div className="h-[500px] w-full">
-            <SportsDistributionChart data={data.sports} />
-          </div>
-          {/* Facilities by Region - Bottom Right */}
-          <div className="h-[500px] w-full">
+        <div className="h-[500px] w-full">
             <FacilitiesByRegionChart data={data.regions} />
           </div>
+          {/* Sports Distribution - Bottom Left */}
+     
+          
         </div>
+              <div className="h-[500px] w-full">
+            <TopSportsByFacilityChart data={data.topSports} />
+          </div>
+        <div className="w-full grid gap-6 grid-cols-1 xl:grid-cols-2">
+
+          {/* Facilities by Region - Bottom Right */}
+      
+        </div>
+
       </div>
     </div>
   );
