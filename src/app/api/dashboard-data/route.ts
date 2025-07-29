@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import type { KSARegion } from "@prisma/client"
+import { dashboardCache } from "@/lib/cache-utils"
 
 const REGION_DISPLAY_NAMES: Record<string, string> = {
   RIYADH: "Riyadh",
@@ -36,11 +37,6 @@ const regionIdToKsaRegionEnum: Record<string, KSARegion> = {
 }
 
 // Type definitions for better type safety
-interface CacheEntry<T> {
-  data: T;
-  timestamp: number;
-}
-
 interface WhereClause {
   region?: KSARegion;
   facilityType?: {
@@ -65,8 +61,6 @@ interface RegionData {
   [key: string]: number;
 }
 
-// Simple in-memory cache
-const cache = new Map<string, CacheEntry<unknown>>()
 const CACHE_DURATION = 5 * 60 * 1000 // 5 minutes
 
 export async function GET(request: Request) {
@@ -94,7 +88,7 @@ export async function GET(request: Request) {
 
     // Create cache key including all parameters
     const cacheKey = `dashboard-data-${ksaRegion || "all"}-${page}-${limit}-${sports.join(",")}-${facilityTypes.join(",")}-${locationTypes.join(",")}-${ministryOfSports}`
-    const cached = cache.get(cacheKey)
+    const cached = dashboardCache.get(cacheKey)
 
     if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
       return NextResponse.json(cached.data, {
@@ -322,7 +316,7 @@ export async function GET(request: Request) {
     }
 
     // Cache the result
-    cache.set(cacheKey, { data: result, timestamp: Date.now() })
+    dashboardCache.set(cacheKey, { data: result, timestamp: Date.now() })
 
     return NextResponse.json(result, {
       headers: {
@@ -332,18 +326,5 @@ export async function GET(request: Request) {
   } catch (error) {
     console.error("Error fetching dashboard data:", error)
     return NextResponse.json({ error: "Failed to fetch dashboard data" }, { status: 500 })
-  }
-}
-
-// Helper function to clear cache when data is updated
-export function clearDashboardDataCache() {
-  cache.clear()
-}
-
-// Helper function to get cache stats for monitoring
-export function getDashboardDataCacheStats() {
-  return {
-    size: cache.size,
-    keys: Array.from(cache.keys()),
   }
 }
