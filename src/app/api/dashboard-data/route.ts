@@ -113,7 +113,7 @@ interface WhereClause {
 const cache = new Map<string, CacheEntry>()
 const CACHE_DURATION = 5 * 60 * 1000
 
-export async function GET(request: Request): Promise<NextResponse<DashboardResponse | { error: string }>> {
+export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
     const regionIdParam = searchParams.get("region")
