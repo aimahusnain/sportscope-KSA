@@ -131,9 +131,6 @@ export default function Dashboard() {
             <TopSportsByFacilityChart data={data.topSports} />
           </div>
         <div className="w-full grid gap-6 grid-cols-1 xl:grid-cols-2">
-
-          {/* Facilities by Region - Bottom Right */}
-      
         </div>
 
       </div>
