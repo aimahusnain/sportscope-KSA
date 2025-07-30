@@ -17,6 +17,7 @@ const regionNames: Record<string, string> = regionsData.regions.reduce(
   {} as Record<string, string>,
 )
 
+
 // Beautiful, harmonious color palette - soft and professional
 const regionColors: Record<string, { base: string; hover: string }> = {
   "SA-01": { base: "#6366F1", hover: "#4F46E5" }, // Soft Indigo
@@ -69,6 +70,14 @@ export default function InteractiveSaudiMap() {
     clearAllFilters,
     setSelectedLocationTypes, // Function to update selectedLocationTypes
   } = useFilters()
+
+  const getDisplayFacilityCount = (regionId: string) => {
+  if (selectedLocationTypes.length === 1 && selectedLocationTypes[0] !== regionId) {
+    return ""
+  }
+  return facilityData[regionId] || ""
+}
+
 
   // Fetch facility statistics from server with filters
   const fetchRegionStats = useCallback(async () => {
@@ -325,9 +334,9 @@ export default function InteractiveSaudiMap() {
                   d={region.path}
                   role="button"
                   tabIndex={0}
-                  aria-label={`${region.name} region - ${facilityData[region.id] || 0} facilities`}
+
                   onClick={() => handleRegionClick(region.id)} // Add onClick handler
-                >
+                >-
                   <title>
                     {region.name} - {facilityData[region.id] || 0} facilities
                   </title>
@@ -356,13 +365,9 @@ export default function InteractiveSaudiMap() {
             <div className="flex items-center justify-between">
               <h3 className="font-semibold text-base">KSA Regions</h3>
               <div className="flex items-center gap-2">
-                {hasActiveFilters && (
-                  <Badge variant="outline" className="text-xs bg-lime-100 text-lime-800 border-lime-300">
-                    Filtered
-                  </Badge>
-                )}
+          
   <Badge variant="secondary" className="text-xs">
-    {totalFacilities}
+   {totalFacilities}
   </Badge>
 
               </div>
@@ -401,7 +406,7 @@ export default function InteractiveSaudiMap() {
                     </span>
                     <div className="flex items-center gap-1">
 <div title="Total number of facilities">
-                      <span className="text-xs text-muted-foreground font-medium">{facilityData[id] || 0}</span>
+<span className="text-xs text-muted-foreground font-medium">{getDisplayFacilityCount(id)}</span>
                       </div>
                       {/* I need no. of facilities instead of Sa-... */}
                       {/* <Badge

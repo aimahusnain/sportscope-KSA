@@ -11,7 +11,15 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Label } from "@/components/ui/label"
-import { Building2, ChevronDown, MapPin, Building, PanelLeftClose, PanelLeft, Filter } from "lucide-react"
+import {
+  Building2,
+  ChevronDown,
+  MapPin,
+  Building,
+  PanelLeftClose,
+  PanelLeft,
+  Filter,
+} from "lucide-react"
 import * as React from "react"
 import { useFilters } from "@/contexts/filter-context"
 
@@ -28,8 +36,7 @@ type SidebarProps = {
 export default function Sidebar({ sports, facilityTypes }: SidebarProps) {
   const [isOpen, setIsOpen] = React.useState(false)
   const [showButton, setShowButton] = React.useState(true)
-console.log("Sidebar rendered with sports:",showButton)
-  // Use the filter context instead of local state
+
   const {
     selectedSports,
     selectedFacilityTypes,
@@ -41,7 +48,24 @@ console.log("Sidebar rendered with sports:",showButton)
     setMinistryOfSports,
   } = useFilters()
 
-  // Set initial state based on screen size
+  // Utility: are all selected?
+  const areAllSelected = (items: string[], selected: string[]) =>
+    items.length > 0 &&
+    items.length === selected.length &&
+    items.every((i) => selected.includes(i))
+
+  const handleSelectAll = (
+    items: string[],
+    selected: string[],
+    setter: (val: string[]) => void
+  ) => {
+    if (areAllSelected(items, selected)) {
+      setter([])
+    } else {
+      setter(items)
+    }
+  }
+
   React.useEffect(() => {
     const checkScreenSize = () => {
       if (window.innerWidth >= 768) {
@@ -56,29 +80,24 @@ console.log("Sidebar rendered with sports:",showButton)
     return () => window.removeEventListener("resize", checkScreenSize)
   }, [])
 
-  // Handle button visibility with delay
   React.useEffect(() => {
     if (isOpen) {
-      // Hide button immediately when opening
       setShowButton(false)
     } else {
-      // Show button with delay when closing
       const timer = setTimeout(() => {
         setShowButton(true)
-      }, 300) // Match transition duration
+      }, 300)
       return () => clearTimeout(timer)
     }
   }, [isOpen])
 
-  const toggleSidebar = () => {
-    setIsOpen(!isOpen)
-  }
+  const toggleSidebar = () => setIsOpen(!isOpen)
 
   const toggleSport = (sportName: string) => {
     setSelectedSports(
       selectedSports.includes(sportName)
         ? selectedSports.filter((s) => s !== sportName)
-        : [...selectedSports, sportName],
+        : [...selectedSports, sportName]
     )
   }
 
@@ -86,7 +105,7 @@ console.log("Sidebar rendered with sports:",showButton)
     setSelectedFacilityTypes(
       selectedFacilityTypes.includes(facilityTypeName)
         ? selectedFacilityTypes.filter((f) => f !== facilityTypeName)
-        : [...selectedFacilityTypes, facilityTypeName],
+        : [...selectedFacilityTypes, facilityTypeName]
     )
   }
 
@@ -94,16 +113,15 @@ console.log("Sidebar rendered with sports:",showButton)
     setSelectedLocationTypes(
       selectedLocationTypes.includes(locationType)
         ? selectedLocationTypes.filter((l) => l !== locationType)
-        : [...selectedLocationTypes, locationType],
+        : [...selectedLocationTypes, locationType]
     )
   }
 
- 
-
-  // Calculate total selected filters
   const totalFilters =
-    selectedSports.length + selectedFacilityTypes.length + selectedLocationTypes.length + (ministryOfSports ? 1 : 0)
-
+    selectedSports.length +
+    selectedFacilityTypes.length +
+    selectedLocationTypes.length +
+    (ministryOfSports ? 1 : 0)
   return (
     <div className="relative">
       {/* Add top margin on mobile to prevent overlap with filter button */}
@@ -194,128 +212,151 @@ console.log("Sidebar rendered with sports:",showButton)
         </div>
 
         <div className={`p-4 sm:p-6 space-y-4 sm:space-y-6 ${isOpen ? 'block' : 'hidden md:block'}`}>
-          {/* Sports Selection */}
- <Card className="border-0 shadow-sm bg-card/50">
-  <CardHeader>
-    <div className="flex items-center justify-between">
-      <CardTitle className="text-base font-semibold flex items-center gap-2 text-black dark:text-white">
-        Sports
-        {selectedSports.length > 0 && (
-          <Badge
-            variant="secondary"
-            className="bg-lime-100 text-black border-lime-200 dark:bg-lime-900 dark:text-white dark:border-lime-700"
-          >
-            {selectedSports.length}
-          </Badge>
-        )}
-      </CardTitle>
-    </div>
-  </CardHeader>
-
-  <CardContent className="pt-0">
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant="outline"
-          className="w-full justify-between h-10 border-border/60 hover:border-lime-300 bg-transparent text-black dark:text-white"
-        >
-          <span className="text-sm text-black/70 dark:text-white/70 truncate">
-            {selectedSports.length === 0
-              ? "Select sports..."
-              : `${selectedSports.length} sport${selectedSports.length > 1 ? "s" : ""} selected`}
-          </span>
-          <ChevronDown className="h-4 w-4 opacity-50 flex-shrink-0" />
-        </Button>
-      </DropdownMenuTrigger>
-
-      {/* Bigger, left-side dropdown, multi-column (no scroll) */}
-      <DropdownMenuContent
-        side="left"           // open on the left of the trigger
-        align="start"         // align content's left edge with trigger
-        sideOffset={8}
-        collisionPadding={8}
-        className="w-[32rem] max-w-[95vw] p-2 z-[10000]"
-      > 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-1">
-          {sports.map((sport) => (
-            <DropdownMenuCheckboxItem
-              key={sport.id}
-              checked={selectedSports.includes(sport.name)}
-              onCheckedChange={() => toggleSport(sport.name)}
-              className="cursor-pointer text-black dark:text-white justify-start whitespace-normal"
-            >
-              {sport.name}
-            </DropdownMenuCheckboxItem>
-          ))}
-        </div>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  </CardContent>
-</Card>
+  
 
 
-          {/* Facility Types Selection */}
-      <Card className="border-0 shadow-sm bg-card/50">
-  <CardHeader>
-    <div className="flex items-center justify-between">
-      <CardTitle className="text-base font-semibold flex items-center gap-2 text-black dark:text-white">
-        Facility Type
-        {selectedFacilityTypes.length > 0 && (
-          <Badge
-            variant="secondary"
-            className="bg-lime-100 text-black border-lime-200 dark:bg-lime-900 dark:text-white dark:border-lime-700"
-          >
-            {selectedFacilityTypes.length}
-          </Badge>
-        )}
-      </CardTitle>
-    </div>
-  </CardHeader>
+        {/* FACILITY TYPES */}
+          <Card className="border-0 shadow-sm bg-card/50">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-base font-semibold flex items-center gap-2 text-black dark:text-white">
+                Facility Type
+                {selectedFacilityTypes.length > 0 && (
+                  <Badge
+                    variant="secondary"
+                    className="bg-lime-100 text-black border-lime-200 dark:bg-lime-900 dark:text-white dark:border-lime-700"
+                  >
+                    {selectedFacilityTypes.length}
+                  </Badge>
+                )}
+              </CardTitle>
 
-  <CardContent className="pt-0">
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant="outline"
-          className="w-full justify-between h-10 border-border/60 hover:border-lime-300 bg-transparent text-black dark:text-white"
-        >
-          <span className="text-sm text-black/70 dark:text-white/70 truncate">
-            {selectedFacilityTypes.length === 0
-              ? "Select facility types..."
-              : `${selectedFacilityTypes.length} facilit${
-                  selectedFacilityTypes.length > 1 ? "ies" : "y"
-                } selected`}
-          </span>
-          <ChevronDown className="h-4 w-4 opacity-50 flex-shrink-0" />
-        </Button>
-      </DropdownMenuTrigger>
+              <button
+                className="text-xs text-lime-600 hover:underline"
+                onClick={() =>
+                  handleSelectAll(
+                    facilityTypes.map((f) => f.name),
+                    selectedFacilityTypes,
+                    setSelectedFacilityTypes
+                  )
+                }
+              >
+                {areAllSelected(
+                  facilityTypes.map((f) => f.name),
+                  selectedFacilityTypes
+                )
+                  ? "Deselect All"
+                  : "Select All"}
+              </button>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="w-full justify-between h-10 border-border/60 hover:border-lime-300 bg-transparent text-black dark:text-white"
+                  >
+                    <span className="text-sm text-black/70 dark:text-white/70 truncate">
+                      {selectedFacilityTypes.length === 0
+                        ? "Select facility types..."
+                        : `${selectedFacilityTypes.length} selected`}
+                    </span>
+                    <ChevronDown className="h-4 w-4 opacity-50 flex-shrink-0" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  side="left"
+                  align="start"
+                  sideOffset={8}
+                  collisionPadding={8}
+                  className="w-[32rem] max-w-[95vw] p-2 z-[10000]"
+                >
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-1">
+                    {facilityTypes.map((facilityType) => (
+                      <DropdownMenuCheckboxItem
+                        key={facilityType.id}
+                        checked={selectedFacilityTypes.includes(facilityType.name)}
+                        onCheckedChange={() => toggleFacilityType(facilityType.name)}
+                        className="cursor-pointer text-black dark:text-white justify-start"
+                      >
+                        {facilityType.name}
+                      </DropdownMenuCheckboxItem>
+                    ))}
+                  </div>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </CardContent>
+          </Card>
+        {/* Sports Selection */}
+    <Card className="border-0 shadow-sm bg-card/50">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-base font-semibold flex items-center gap-2 text-black dark:text-white">
+                Sports
+                {selectedSports.length > 0 && (
+                  <Badge
+                    variant="secondary"
+                    className="bg-lime-100 text-black border-lime-200 dark:bg-lime-900 dark:text-white dark:border-lime-700"
+                  >
+                    {selectedSports.length}
+                  </Badge>
+                )}
+              </CardTitle>
 
-      {/* Bigger, left-side dropdown, no vertical scroll */}
-      <DropdownMenuContent
-        side="left"            // open to the left of the trigger
-        align="start"          // align content's left edge with trigger
-        sideOffset={8}
-        collisionPadding={8}
-        className="w-[32rem] max-w-[95vw] p-2 z-[10000]" // wider and padded
-      >
-        {/* Multi-column layout so we don’t need to scroll */}
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-1">
-          {facilityTypes.map((facilityType) => (
-            <DropdownMenuCheckboxItem
-              key={facilityType.id}
-              checked={selectedFacilityTypes.includes(facilityType.name)}
-              onCheckedChange={() => toggleFacilityType(facilityType.name)}
-              className="cursor-pointer text-black dark:text-white justify-start"
-            >
-              {facilityType.name}
-            </DropdownMenuCheckboxItem>
-          ))}
-        </div>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  </CardContent>
-</Card>
-
+              <button
+                className="text-xs text-lime-600 hover:underline"
+                onClick={() =>
+                  handleSelectAll(
+                    sports.map((s) => s.name),
+                    selectedSports,
+                    setSelectedSports
+                  )
+                }
+              >
+                {areAllSelected(
+                  sports.map((s) => s.name),
+                  selectedSports
+                )
+                  ? "Deselect All"
+                  : "Select All"}
+              </button>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="w-full justify-between h-10 border-border/60 hover:border-lime-300 bg-transparent text-black dark:text-white"
+                  >
+                    <span className="text-sm text-black/70 dark:text-white/70 truncate">
+                      {selectedSports.length === 0
+                        ? "Select sports..."
+                        : `${selectedSports.length} selected`}
+                    </span>
+                    <ChevronDown className="h-4 w-4 opacity-50 flex-shrink-0" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  side="left"
+                  align="start"
+                  sideOffset={8}
+                  collisionPadding={8}
+                  className="w-[32rem] max-w-[95vw] p-2 z-[10000]"
+                >
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-1">
+                    {sports.map((sport) => (
+                      <DropdownMenuCheckboxItem
+                        key={sport.id}
+                        checked={selectedSports.includes(sport.name)}
+                        onCheckedChange={() => toggleSport(sport.name)}
+                        className="cursor-pointer text-black dark:text-white justify-start whitespace-normal"
+                      >
+                        {sport.name}
+                      </DropdownMenuCheckboxItem>
+                    ))}
+                  </div>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </CardContent>
+          </Card>
 
           {/* Location Type Selection */}
           <Card className="border-0 shadow-sm bg-card/50">
