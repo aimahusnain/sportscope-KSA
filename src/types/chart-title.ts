@@ -17,12 +17,12 @@ export interface UpdateChartTitleRequest {
   notes?: string;
 }
 
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   success: boolean;
   data?: T;
   error?: string;
   message?: string;
 }
 
-export interface ChartTitleApiResponse extends ApiResponse<ChartTitle> {}
-export interface ChartTitlesApiResponse extends ApiResponse<ChartTitle[]> {}
+export type ChartTitleApiResponse = ApiResponse<ChartTitle>;
+export type ChartTitlesApiResponse = ApiResponse<ChartTitle[]>;

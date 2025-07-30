@@ -7,10 +7,10 @@ const prisma = new PrismaClient();
 // GET - Fetch a specific chart title
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
 
     const chartTitle = await prisma.chartTitle.findUnique({
       where: { id }
@@ -45,10 +45,10 @@ export async function GET(
 // PUT - Update a chart title ONLY
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const body = await request.json();
     const { name } = body;
 
@@ -81,7 +81,7 @@ export async function PUT(
     console.error('Error updating chart title:', error);
     
     // Handle Prisma "record not found" error
-    if (error === 'P2025') {
+    if (error instanceof Error && 'code' in error && error.code === 'P2025') {
       return NextResponse.json(
         { 
           success: false, 
