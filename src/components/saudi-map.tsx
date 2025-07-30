@@ -363,7 +363,7 @@ export default function InteractiveSaudiMap() {
         <div className="hidden xl:block xl:w-64 flex-shrink-0">
           <Card className="p-3 h-fit">
             <div className="flex items-center justify-between">
-              <h3 className="font-semibold text-base">KSA Regions</h3>
+              <h3 className="font-semibold text-base">Facilities Per Region</h3>
               <div className="flex items-center gap-2">
           
   <Badge variant="secondary" className="text-xs">
