@@ -8,7 +8,6 @@ import {
   CartesianGrid,
   LabelList,
   Cell,
-  ResponsiveContainer,
 } from "recharts"
 import {
   Card,
@@ -34,6 +33,7 @@ const chartColors = [
   "var(--chart-3)",
   "var(--chart-4)",
   "var(--chart-5)",
+  // add more if needed
 ]
 
 export function FacilityTypesChart({ data }: FacilityTypesChartProps) {
@@ -51,7 +51,7 @@ export function FacilityTypesChart({ data }: FacilityTypesChartProps) {
   }
 
   return (
-    <Card className="h-full flex flex-col">
+    <Card className=" h-fit  flex flex-col">
       <CardHeader className="pb-2">
         <CardTitle className="text-xl font-semibold text-foreground">
           Facility Types Distribution
@@ -61,53 +61,49 @@ export function FacilityTypesChart({ data }: FacilityTypesChartProps) {
         </CardDescription>
       </CardHeader>
 
-      <CardContent className="flex-1 p-4 min-w-0">
+      <CardContent className="flex-1 flex items-center justify-center px-4">
         <ChartContainer
           config={chartConfig}
           className="w-full h-full max-h-[380px] text-muted-foreground"
         >
-          <ResponsiveContainer width="100%" height="100%" debounce={1}>
-            <BarChart
-              data={chartData}
-              margin={{ top: 12, right: 20, bottom: 60, left: 20 }}
-            >
-              <CartesianGrid vertical={false} stroke="var(--border)" />
+          <BarChart
+            data={chartData}
+            margin={{ top: 8, right: 12, left: 12, bottom: 60 }}
+          >
+            <CartesianGrid stroke="var(--border)" vertical={false} />
 
-              {/* Keep labels on both axes */}
-              <XAxis
-                dataKey="type"
-                tickLine={false}
-                axisLine={false}
-                tickMargin={8}
-                interval="preserveStartEnd"
-                angle={-70}
-                textAnchor="end"
-                height={60}
-                tick={{ fill: "currentColor", fontSize: 12 }}
+            <XAxis
+              dataKey="type"
+              tickLine={false}
+              axisLine={false}
+              tickMargin={8}
+              interval={0}
+              angle={-70}
+              textAnchor="end"
+              height={60}
+              tick={{ fill: "currentColor", fontSize: 12 }}
+            />
+            <YAxis
+              allowDecimals={false}
+              tickLine={false}
+              axisLine={false}
+              tickMargin={8}
+              tick={{ fill: "currentColor" }}
+            />
+
+            <ChartTooltip content={<ChartTooltipContent />} />
+
+            <Bar dataKey="facilities" radius={[7, 7, 0, 0]}>
+              <LabelList
+                dataKey="facilities"
+                position="top"
+                fill="var(--foreground)"
               />
-              <YAxis
-                allowDecimals={false}
-                tickLine={false}
-                axisLine={false}
-                tickMargin={8}
-                tick={{ fill: "currentColor", fontSize: 12 }}
-              />
-
-              <ChartTooltip content={<ChartTooltipContent />} />
-
-              <Bar dataKey="facilities" radius={[7, 7, 0, 0]}>
-                {/* Keep bar value labels */}
-                <LabelList
-                  dataKey="facilities"
-                  position="top"
-                  fill="var(--foreground)"
-                />
-                {chartData.map((d, i) => (
-                  <Cell key={i} fill={d.fill} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
+              {chartData.map((d, i) => (
+                <Cell key={i} fill={d.fill} />
+              ))}
+            </Bar>
+          </BarChart>
         </ChartContainer>
       </CardContent>
     </Card>
