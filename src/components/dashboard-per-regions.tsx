@@ -3,12 +3,14 @@
 import { FacilitiesByRegionChart } from "@/components/charts/facilities-by-region-chart";
 import { FacilityTypesChart } from "@/components/charts/facility-types-chart";
 import { TopSportsByFacilityChart } from "@/components/charts/top-sports-by-facility-chart";
+import { FacilitiesByRegionPieChart } from "./charts/facilities-by-region-chart-pie";
 import { Card } from "@/components/ui/card";
 import { useFilters } from "@/contexts/filter-context";
 import { regionNames } from "@/lib/dashboard-data"; // Import regionNames for display
 import { Loader2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
+import { ChartPieLabel } from "./charts/FacilityTypesPichart";
 
 interface DashboardData {
   facilityTypes: Record<string, number>;
@@ -114,17 +116,29 @@ export default function Dashboard() {
         </div>
 
         {/* Charts Grid - Full width with responsive layout */}
-        <div className="w-full grid gap-6 grid-cols-1 xl:grid-cols-2">
+        <div className="w-full flex flex-row gap-6">
           {/* Facility Types - Top Left */}
           <div className="h-[500px] w-full">
             <FacilityTypesChart data={data.facilityTypes} />
           </div>
-          {/* Top Sports by Facility Count - Top Right */}
-          <div className="h-[500px] w-full">
-            <FacilitiesByRegionChart data={data.regions} />
+             <div className=" h-[520px] w-[600px]">
+            <ChartPieLabel data={data.facilityTypes} />
           </div>
+          {/* Top Sports by Facility Count - Top Right */}
+   
           {/* Sports Distribution - Bottom Left */}
         </div>
+        <div className="w-full flex flex-row gap-6">
+
+               <div className="h-[500px] w-full">
+            <FacilitiesByRegionChart data={data.regions} />
+          </div>
+              <div className=" h-[500px] w-[600px]">
+            <FacilitiesByRegionPieChart data={data.regions} />
+          </div>
+
+
+          </div>
         <div className="h-[500px] w-full">
           <TopSportsByFacilityChart data={data.topSports} />
         </div>
