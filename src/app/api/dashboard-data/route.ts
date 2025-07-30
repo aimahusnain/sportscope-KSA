@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import type { KSARegion } from "@prisma/client"
-import { dashboardCache } from "@/lib/cache-utils"
 
 const REGION_DISPLAY_NAMES: Record<string, string> = {
   RIYADH: "Riyadh",
@@ -19,7 +18,6 @@ const REGION_DISPLAY_NAMES: Record<string, string> = {
   AL_JOUF: "Al Jouf",
 }
 
-// Region ID to KSARegion enum mapping
 const regionIdToKsaRegionEnum: Record<string, KSARegion> = {
   "SA-01": "RIYADH",
   "SA-02": "MAKKAH",
@@ -36,60 +34,40 @@ const regionIdToKsaRegionEnum: Record<string, KSARegion> = {
   "SA-03": "MADINAH",
 }
 
-// Type definitions for better type safety
-interface WhereClause {
-  region?: KSARegion;
-  facilityType?: {
-    name: {
-      in: string[];
-    };
-  };
-  sports?: {
-    some: {
-      name: {
-        in: string[];
-      };
-    };
-  };
-  locationType?: {
-    in: string[];
-  };
-  ministryOfSports?: boolean;
-}
-
-interface RegionData {
-  [key: string]: number;
-}
-
-const CACHE_DURATION = 5 * 60 * 1000 // 5 minutes
+const cache = new Map<string, { data: any; timestamp: number }>()
+const CACHE_DURATION = 5 * 60 * 1000
 
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
-    const regionIdParam = searchParams.get("region") // This will be "SA-04"
+    const regionIdParam = searchParams.get("region")
     const page = Number.parseInt(searchParams.get("page") || "1")
     const limit = Number.parseInt(searchParams.get("limit") || "100")
 
-    // Get filter parameters
-    const sports = searchParams.get("sports")?.split(",").filter(Boolean) || []
-    const facilityTypes = searchParams.get("facilityTypes")?.split(",").filter(Boolean) || []
-    const locationTypes = searchParams.get("locationTypes")?.split(",").filter(Boolean) || []
+    // Parse array parameters correctly
+    const sports = searchParams.getAll("sports").filter(Boolean)
+    const facilityTypes = searchParams.getAll("facilityTypes").filter(Boolean)
+    const locationTypes = searchParams.getAll("locationTypes").filter(Boolean)
     const ministryOfSports = searchParams.get("ministryOfSports") === "true"
+
+    console.log("🔍 Filtering by:", {
+      selectedSports: sports.length > 0 ? sports : "All sports",
+      selectedFacilityTypes: facilityTypes.length > 0 ? facilityTypes : "All facility types",
+      selectedLocationTypes: locationTypes.length > 0 ? locationTypes : "All location types",
+      ministryOfSports: ministryOfSports ? "Yes" : "No",
+    })
 
     let ksaRegion: KSARegion | undefined = undefined
     if (regionIdParam) {
-      // Use the explicit mapping to convert SA-XX ID to KSARegion enum
       ksaRegion = regionIdToKsaRegionEnum[regionIdParam] as KSARegion
       if (!ksaRegion) {
-        // If the SA-XX ID doesn't map to a known KSARegion enum value
         return NextResponse.json({ error: "Invalid region provided" }, { status: 400 })
       }
     }
 
-    // Create cache key including all parameters
     const cacheKey = `dashboard-data-${ksaRegion || "all"}-${page}-${limit}-${sports.join(",")}-${facilityTypes.join(",")}-${locationTypes.join(",")}-${ministryOfSports}`
-    const cached = dashboardCache.get(cacheKey)
 
+    const cached = cache.get(cacheKey)
     if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
       return NextResponse.json(cached.data, {
         headers: {
@@ -99,14 +77,14 @@ export async function GET(request: Request) {
     }
 
     // Build where clause for filtering
-    const whereClause: WhereClause = {}
+    const whereClause: any = {}
 
     // Region filter
     if (ksaRegion) {
       whereClause.region = ksaRegion
     }
 
-    // Multiple facility types filter
+    // Facility types filter - find facilities with ANY of these facility types
     if (facilityTypes.length > 0) {
       whereClause.facilityType = {
         name: {
@@ -115,30 +93,52 @@ export async function GET(request: Request) {
       }
     }
 
-    // Sports filter
+    // Sports filter - CORRECTED for MongoDB many-to-many relationship
+    // We need to find facilities where ANY of their connected sports match the selected sports
     if (sports.length > 0) {
-      whereClause.sports = {
-        some: {
+      // First, get the sport IDs that match the selected sport names
+      const matchingSports = await prisma.sport.findMany({
+        where: {
           name: {
-            in: sports,
+            in: sports, // Find sports with names in our selected array
           },
         },
+        select: {
+          id: true,
+          name: true,
+        },
+      })
+
+      console.log("🏃 Found matching sports:", matchingSports)
+
+      if (matchingSports.length > 0) {
+        const sportIds = matchingSports.map((sport) => sport.id)
+
+        // Now find facilities that have ANY of these sport IDs in their sportIds array
+        whereClause.sportIds = {
+          hasSome: sportIds, // MongoDB array operator - facility's sportIds array contains any of these IDs
+        }
+      } else {
+        // If no matching sports found, return empty results
+        whereClause.id = "non-existent-id" // This will return no results
       }
     }
 
-    // Location type filter (if you have this field)
+    // Location type filter
     if (locationTypes.length > 0) {
       whereClause.locationType = {
         in: locationTypes,
       }
     }
 
-    // Ministry of Sports filter (if you have this field)
+    // Ministry of Sports filter
     if (ministryOfSports) {
       whereClause.ministryOfSports = true
     }
 
-    // Execute all queries in parallel for better performance
+    console.log("🔎 Prisma where clause:", JSON.stringify(whereClause, null, 2))
+
+    // Execute all queries in parallel
     const [
       facilities,
       facilityTypesDataRaw,
@@ -171,7 +171,7 @@ export async function GET(request: Request) {
         take: limit,
       }),
 
-      // Get facility types count using database aggregation
+      // Get facility types count from filtered results
       prisma.facility.groupBy({
         by: ["facilityTypeId"],
         where: {
@@ -185,10 +185,11 @@ export async function GET(request: Request) {
         },
       }),
 
-      // Get sports count using aggregation
+      // Get all facilities with their sports for counting (filtered)
       prisma.facility.findMany({
         where: whereClause,
         select: {
+          id: true,
           sports: {
             select: {
               name: true,
@@ -197,7 +198,7 @@ export async function GET(request: Request) {
         },
       }),
 
-      // Get region distribution
+      // Get region distribution from filtered results
       prisma.facility.groupBy({
         by: ["region"],
         where: whereClause,
@@ -206,12 +207,12 @@ export async function GET(request: Request) {
         },
       }),
 
-      // Get total facilities count
+      // Total count of filtered facilities
       prisma.facility.count({
         where: whereClause,
       }),
 
-      // Get average rating
+      // Average rating of filtered facilities
       prisma.facility.aggregate({
         where: {
           ...whereClause,
@@ -224,10 +225,10 @@ export async function GET(request: Request) {
         },
       }),
 
-      // Get total unique sports count
+      // Total unique sports count (overall)
       prisma.sport.count(),
 
-      // Get total regions count
+      // Total regions count from filtered results
       prisma.facility
         .groupBy({
           by: ["region"],
@@ -235,6 +236,9 @@ export async function GET(request: Request) {
         })
         .then((result) => result.length),
     ])
+
+    console.log(`📊 Found ${totalFacilities} facilities matching the criteria`)
+    console.log(`📄 Returning page ${page} with ${facilities.length} facilities`)
 
     // Process facility types data
     const facilityTypesData: Record<string, number> = {}
@@ -250,7 +254,7 @@ export async function GET(request: Request) {
       }
     }
 
-    // Process sports data efficiently
+    // Process sports data - count how many facilities have each sport
     const sportsData: Record<string, number> = {}
     sportsDataRaw.forEach((facility) => {
       if (facility.sports && facility.sports.length > 0) {
@@ -261,10 +265,11 @@ export async function GET(request: Request) {
     })
 
     // Process region data
-    const regionData: RegionData = {}
+    const regionData: Record<string, number> = {}
     regionDataRaw.forEach((item) => {
       if (item.region) {
-        regionData[item.region] = item._count.id
+        const displayName = REGION_DISPLAY_NAMES[item.region] || item.region
+        regionData[displayName] = item._count.id
       }
     })
 
@@ -284,6 +289,18 @@ export async function GET(request: Request) {
     const totalPages = Math.ceil(totalFacilities / limit)
     const hasNextPage = page < totalPages
     const hasPrevPage = page > 1
+
+    // Log some example facilities for debugging
+    if (facilities.length > 0) {
+      console.log("🏟️ Example facilities found:")
+      facilities.slice(0, 3).forEach((facility, index) => {
+        console.log(`  ${index + 1}. ${facility.name}`)
+        console.log(`     Sports: ${facility.sports.map((s) => s.name).join(", ")}`)
+        console.log(`     Sport IDs: ${facility.sportIds.join(", ")}`)
+        console.log(`     Type: ${facility.facilityType?.name || "Unknown"}`)
+        console.log(`     Region: ${REGION_DISPLAY_NAMES[facility.region] || facility.region}`)
+      })
+    }
 
     const result = {
       facilityTypes: facilityTypesData,
@@ -313,10 +330,30 @@ export async function GET(request: Request) {
         hasPrevPage,
         limit,
       },
+      debug: {
+        appliedFilters: {
+          sports: sports.length > 0 ? sports : null,
+          facilityTypes: facilityTypes.length > 0 ? facilityTypes : null,
+          locationTypes: locationTypes.length > 0 ? locationTypes : null,
+          ministryOfSports: ministryOfSports || null,
+          region: ksaRegion || null,
+        },
+        queryExplanation: {
+          sportsLogic:
+            sports.length > 0
+              ? `Finding facilities where their sportIds array contains ANY of the IDs for: [${sports.join(", ")}]`
+              : "No sports filter applied",
+          facilityTypesLogic:
+            facilityTypes.length > 0
+              ? `Finding facilities with type: [${facilityTypes.join(", ")}]`
+              : "No facility types filter applied",
+          totalMatches: totalFacilities,
+        },
+      },
     }
 
     // Cache the result
-    dashboardCache.set(cacheKey, { data: result, timestamp: Date.now() })
+    cache.set(cacheKey, { data: result, timestamp: Date.now() })
 
     return NextResponse.json(result, {
       headers: {
@@ -324,7 +361,18 @@ export async function GET(request: Request) {
       },
     })
   } catch (error) {
-    console.error("Error fetching dashboard data:", error)
+    console.error("❌ Error fetching dashboard data:", error)
     return NextResponse.json({ error: "Failed to fetch dashboard data" }, { status: 500 })
+  }
+}
+
+export function clearDashboardDataCache() {
+  cache.clear()
+}
+
+export function getDashboardDataCacheStats() {
+  return {
+    size: cache.size,
+    keys: Array.from(cache.keys()),
   }
 }
