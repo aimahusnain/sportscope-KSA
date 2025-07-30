@@ -3,10 +3,10 @@
 import { FacilitiesByRegionChart } from "@/components/charts/facilities-by-region-chart";
 import { FacilityTypesChart } from "@/components/charts/facility-types-chart";
 import { TopSportsByFacilityChart } from "@/components/charts/top-sports-by-facility-chart";
-import { Card, } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { useFilters } from "@/contexts/filter-context";
 import { regionNames } from "@/lib/dashboard-data"; // Import regionNames for display
-import { Loader2, } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -112,7 +112,7 @@ export default function Dashboard() {
             coverage
           </p>
         </div>
-   
+
         {/* Charts Grid - Full width with responsive layout */}
         <div className="w-full grid gap-6 grid-cols-1 xl:grid-cols-2">
           {/* Facility Types - Top Left */}
@@ -120,19 +120,15 @@ export default function Dashboard() {
             <FacilityTypesChart data={data.facilityTypes} />
           </div>
           {/* Top Sports by Facility Count - Top Right */}
-        <div className="h-[500px] w-full">
+          <div className="h-[500px] w-full">
             <FacilitiesByRegionChart data={data.regions} />
           </div>
           {/* Sports Distribution - Bottom Left */}
-     
-          
         </div>
-              <div className="h-[500px] w-full">
-            <TopSportsByFacilityChart data={data.topSports} />
-          </div>
-        <div className="w-full grid gap-6 grid-cols-1 xl:grid-cols-2">
+        <div className="h-[500px] w-full">
+          <TopSportsByFacilityChart data={data.topSports} />
         </div>
-
+        <div className="w-full grid gap-6 grid-cols-1 xl:grid-cols-2"></div>
       </div>
     </div>
   );

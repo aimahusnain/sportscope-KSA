@@ -46,13 +46,12 @@ export function FacilityTypesChart({ data }: FacilityTypesChartProps) {
     fill: chartColors[index % chartColors.length],
   }))
 
-  // Minimal config for your ChartContainer
   const chartConfig: ChartConfig = {
     facilities: { label: "Facilities", color: "var(--chart-1)" },
   }
 
   return (
-    <Card className="h-full flex flex-col">
+    <Card className=" h-fit flex flex-col">
       <CardHeader className="pb-2">
         <CardTitle className="text-xl font-semibold text-foreground">
           Facility Types Distribution
@@ -62,17 +61,15 @@ export function FacilityTypesChart({ data }: FacilityTypesChartProps) {
         </CardDescription>
       </CardHeader>
 
-      <CardContent className="flex-1 flex items-center justify-center p-4">
-        {/* Set the text color here; ticks use currentColor */}
+      <CardContent className="flex-1 flex items-center justify-center px-4">
         <ChartContainer
           config={chartConfig}
           className="w-full h-full max-h-[380px] text-muted-foreground"
         >
           <BarChart
             data={chartData}
-            margin={{ top: 8, right: 12, left: 12, bottom: 24 }}
+            margin={{ top: 8, right: 12, left: 12, bottom: 60 }}
           >
-            {/* Grid + axes use your tokens */}
             <CartesianGrid stroke="var(--border)" vertical={false} />
 
             <XAxis
@@ -80,8 +77,11 @@ export function FacilityTypesChart({ data }: FacilityTypesChartProps) {
               tickLine={false}
               axisLine={false}
               tickMargin={8}
-              tick={{ fill: "currentColor" }}   // resolves to text-muted-foreground
-              // If labels overlap: interval={0} angle={-30} height={60}
+              interval={0}
+              angle={-70}
+              textAnchor="end"
+              height={60}
+              tick={{ fill: "currentColor", fontSize: 12 }}
             />
             <YAxis
               allowDecimals={false}
@@ -93,8 +93,7 @@ export function FacilityTypesChart({ data }: FacilityTypesChartProps) {
 
             <ChartTooltip content={<ChartTooltipContent />} />
 
-            <Bar dataKey="facilities" radius={[6, 6, 0, 0]}>
-              {/* Top labels readable in both themes */}
+            <Bar dataKey="facilities" radius={[7, 7, 0, 0]}>
               <LabelList
                 dataKey="facilities"
                 position="top"
