@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import type { KSARegion } from "@prisma/client"
+import { getCache, CACHE_DURATION, type DashboardResponse } from "@/lib/dashboard-cache"
 
 const REGION_DISPLAY_NAMES: Record<string, string> = {
   RIYADH: "Riyadh",
@@ -34,64 +35,6 @@ const regionIdToKsaRegionEnum: Record<string, KSARegion> = {
   "SA-03": "MADINAH",
 }
 
-// Define proper types for the API response
-interface DashboardStats {
-  totalFacilities: number
-  totalSports: number
-  totalRegions: number
-  averageRating: number
-}
-
-interface FacilityResponse {
-  id: string
-  name: string
-  region: string
-  facilityType: string
-  sports: string[]
-  rating: number | null
-  createdAt: Date
-}
-
-interface PaginationInfo {
-  currentPage: number
-  totalPages: number
-  totalCount: number
-  hasNextPage: boolean
-  hasPrevPage: boolean
-  limit: number
-}
-
-interface DebugInfo {
-  appliedFilters: {
-    sports: string[] | null
-    facilityTypes: string[] | null
-    locationTypes: string[] | null
-    ministryOfSports: boolean | null
-    region: KSARegion | null
-  }
-  queryExplanation: {
-    sportsLogic: string
-    facilityTypesLogic: string
-    totalMatches: number
-  }
-}
-
-interface DashboardResponse {
-  facilityTypes: Record<string, number>
-  sports: Record<string, number>
-  regions: Record<string, number>
-  topSports: Record<string, number>
-  stats: DashboardStats
-  facilities: FacilityResponse[]
-  pagination: PaginationInfo
-  debug: DebugInfo
-}
-
-interface CacheEntry {
-  data: DashboardResponse
-  timestamp: number
-}
-
 // Define the Prisma where clause type
 interface WhereClause {
   region?: KSARegion
@@ -110,11 +53,9 @@ interface WhereClause {
   id?: string
 }
 
-const cache = new Map<string, CacheEntry>()
-const CACHE_DURATION = 5 * 60 * 1000
-
 export async function GET(request: Request) {
   try {
+    const cache = getCache()
     const { searchParams } = new URL(request.url)
     const regionIdParam = searchParams.get("region")
     const page = Number.parseInt(searchParams.get("page") || "1")
@@ -387,17 +328,15 @@ export async function GET(request: Request) {
         totalRegions,
         averageRating: Math.round((averageRatingResult._avg.rating || 0) * 10) / 10,
       },
-      facilities: facilities.map(
-        (facility): FacilityResponse => ({
-          id: facility.id,
-          name: facility.name || "Unnamed Facility", // Handle null name
-          region: REGION_DISPLAY_NAMES[facility.region] || facility.region,
-          facilityType: facility.facilityType?.name || "Unknown",
-          sports: facility.sports.map((sport) => sport.name),
-          rating: facility.rating,
-          createdAt: facility.createdAt,
-        }),
-      ),
+      facilities: facilities.map((facility) => ({
+        id: facility.id,
+        name: facility.name || "Unnamed Facility", // Handle null name
+        region: REGION_DISPLAY_NAMES[facility.region] || facility.region,
+        facilityType: facility.facilityType?.name || "Unknown",
+        sports: facility.sports.map((sport) => sport.name),
+        rating: facility.rating,
+        createdAt: facility.createdAt,
+      })),
       pagination: {
         currentPage: page,
         totalPages,
@@ -439,16 +378,5 @@ export async function GET(request: Request) {
   } catch (error) {
     console.error("❌ Error fetching dashboard data:", error)
     return NextResponse.json({ error: "Failed to fetch dashboard data" }, { status: 500 })
-  }
-}
-
-export function clearDashboardDataCache(): void {
-  cache.clear()
-}
-
-export function getDashboardDataCacheStats(): { size: number; keys: string[] } {
-  return {
-    size: cache.size,
-    keys: Array.from(cache.keys()),
   }
 }
