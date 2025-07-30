@@ -34,10 +34,86 @@ const regionIdToKsaRegionEnum: Record<string, KSARegion> = {
   "SA-03": "MADINAH",
 }
 
-const cache = new Map<string, { data: any; timestamp: number }>()
+// Define proper types for the API response
+interface DashboardStats {
+  totalFacilities: number
+  totalSports: number
+  totalRegions: number
+  averageRating: number
+}
+
+interface FacilityResponse {
+  id: string
+  name: string
+  region: string
+  facilityType: string
+  sports: string[]
+  rating: number | null
+  createdAt: Date
+}
+
+interface PaginationInfo {
+  currentPage: number
+  totalPages: number
+  totalCount: number
+  hasNextPage: boolean
+  hasPrevPage: boolean
+  limit: number
+}
+
+interface DebugInfo {
+  appliedFilters: {
+    sports: string[] | null
+    facilityTypes: string[] | null
+    locationTypes: string[] | null
+    ministryOfSports: boolean | null
+    region: KSARegion | null
+  }
+  queryExplanation: {
+    sportsLogic: string
+    facilityTypesLogic: string
+    totalMatches: number
+  }
+}
+
+interface DashboardResponse {
+  facilityTypes: Record<string, number>
+  sports: Record<string, number>
+  regions: Record<string, number>
+  topSports: Record<string, number>
+  stats: DashboardStats
+  facilities: FacilityResponse[]
+  pagination: PaginationInfo
+  debug: DebugInfo
+}
+
+interface CacheEntry {
+  data: DashboardResponse
+  timestamp: number
+}
+
+// Define the Prisma where clause type
+interface WhereClause {
+  region?: KSARegion
+  facilityType?: {
+    name: {
+      in: string[]
+    }
+  }
+  sportIds?: {
+    hasSome: string[]
+  }
+  locationType?: {
+    in: string[]
+  }
+  ministryOfSports?: boolean
+  id?: string
+}
+
+const cache = new Map<string, CacheEntry>()
 const CACHE_DURATION = 5 * 60 * 1000
 
-export async function GET(request: Request) {
+export async function GET(request: Request): Promise<NextResponse<DashboardResponse | { error: string }>> {
   try {
     const { searchParams } = new URL(request.url)
     const regionIdParam = searchParams.get("region")
@@ -66,7 +142,6 @@ export async function GET(request: Request) {
     }
 
     const cacheKey = `dashboard-data-${ksaRegion || "all"}-${page}-${limit}-${sports.join(",")}-${facilityTypes.join(",")}-${locationTypes.join(",")}-${ministryOfSports}`
-
     const cached = cache.get(cacheKey)
     if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
       return NextResponse.json(cached.data, {
@@ -77,7 +152,7 @@ export async function GET(request: Request) {
     }
 
     // Build where clause for filtering
-    const whereClause: any = {}
+    const whereClause: WhereClause = {}
 
     // Region filter
     if (ksaRegion) {
@@ -113,7 +188,6 @@ export async function GET(request: Request) {
 
       if (matchingSports.length > 0) {
         const sportIds = matchingSports.map((sport) => sport.id)
-
         // Now find facilities that have ANY of these sport IDs in their sportIds array
         whereClause.sportIds = {
           hasSome: sportIds, // MongoDB array operator - facility's sportIds array contains any of these IDs
@@ -294,7 +368,7 @@ export async function GET(request: Request) {
     if (facilities.length > 0) {
       console.log("🏟️ Example facilities found:")
       facilities.slice(0, 3).forEach((facility, index) => {
-        console.log(`  ${index + 1}. ${facility.name}`)
+        console.log(`  ${index + 1}. ${facility.name || "Unnamed Facility"}`)
         console.log(`     Sports: ${facility.sports.map((s) => s.name).join(", ")}`)
         console.log(`     Sport IDs: ${facility.sportIds.join(", ")}`)
         console.log(`     Type: ${facility.facilityType?.name || "Unknown"}`)
@@ -302,7 +376,7 @@ export async function GET(request: Request) {
       })
     }
 
-    const result = {
+    const result: DashboardResponse = {
       facilityTypes: facilityTypesData,
       sports: sportsData,
       regions: regionData,
@@ -313,15 +387,17 @@ export async function GET(request: Request) {
         totalRegions,
         averageRating: Math.round((averageRatingResult._avg.rating || 0) * 10) / 10,
       },
-      facilities: facilities.map((facility) => ({
-        id: facility.id,
-        name: facility.name,
-        region: REGION_DISPLAY_NAMES[facility.region] || facility.region,
-        facilityType: facility.facilityType?.name || "Unknown",
-        sports: facility.sports.map((sport) => sport.name),
-        rating: facility.rating,
-        createdAt: facility.createdAt,
-      })),
+      facilities: facilities.map(
+        (facility): FacilityResponse => ({
+          id: facility.id,
+          name: facility.name || "Unnamed Facility", // Handle null name
+          region: REGION_DISPLAY_NAMES[facility.region] || facility.region,
+          facilityType: facility.facilityType?.name || "Unknown",
+          sports: facility.sports.map((sport) => sport.name),
+          rating: facility.rating,
+          createdAt: facility.createdAt,
+        }),
+      ),
       pagination: {
         currentPage: page,
         totalPages,
@@ -366,11 +442,11 @@ export async function GET(request: Request) {
   }
 }
 
-export function clearDashboardDataCache() {
+export function clearDashboardDataCache(): void {
   cache.clear()
 }
 
-export function getDashboardDataCacheStats() {
+export function getDashboardDataCacheStats(): { size: number; keys: string[] } {
   return {
     size: cache.size,
     keys: Array.from(cache.keys()),
