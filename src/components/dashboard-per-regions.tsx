@@ -119,28 +119,37 @@ export default function Dashboard() {
         <div className="w-full flex flex-row gap-6">
           {/* Facility Types - Top Left */}
           <div className="h-[500px] w-full">
-            <FacilityTypesChart data={data.facilityTypes} />
+            <FacilityTypesChart
+              data={data.facilityTypes}
+              chartTitleId="688a90f5bc6991764213b863"
+            />
           </div>
-             <div className=" h-[520px] w-[600px]">
-            <ChartPieLabel data={data.facilityTypes} />
+          <div className=" h-[520px] w-[600px]">
+            <ChartPieLabel
+              data={data.facilityTypes}
+              chartTitleId="688a98c0bc6991764213b86a"
+            />
           </div>
-          {/* Top Sports by Facility Count - Top Right */}
-   
-          {/* Sports Distribution - Bottom Left */}
         </div>
         <div className="w-full flex flex-row gap-6">
-
-               <div className="h-[500px] w-full">
-            <FacilitiesByRegionChart data={data.regions} />
+          <div className="h-[500px] w-full">
+            <FacilitiesByRegionChart
+              data={data.regions}
+              chartTitleId="688a998abc6991764213b86e"
+            />
           </div>
-              <div className=" h-[500px] w-[600px]">
-            <FacilitiesByRegionPieChart data={data.regions} />
+          <div className=" h-[500px] w-[600px]">
+            <FacilitiesByRegionPieChart
+              data={data.regions}
+              chartTitleId="688a98c0bc6991764213b86a"
+            />
           </div>
-
-
-          </div>
+        </div>
         <div className="h-[500px] w-full">
-          <TopSportsByFacilityChart data={data.topSports} />
+          <TopSportsByFacilityChart
+            data={data.topSports}
+            chartTitleId="688a9a65bc6991764213b875"
+          />
         </div>
         <div className="w-full grid gap-6 grid-cols-1 xl:grid-cols-2"></div>
       </div>

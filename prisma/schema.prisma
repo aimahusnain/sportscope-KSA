@@ -70,3 +70,14 @@ enum KSARegion {
   AL_BAHAH
   AL_JOUF
 }
+
+model ChartTitle {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  name      String   // The title text
+  notes     String?  // Optional notes
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Add index for faster queries by name
+  @@index([name])
+}
