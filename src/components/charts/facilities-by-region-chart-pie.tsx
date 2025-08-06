@@ -1,5 +1,6 @@
 "use client"
-import React, { useState, useRef, useEffect } from 'react';
+
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Edit3, Check, X, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,7 +16,6 @@ import {
   type ChartConfig,
   ChartContainer,
   ChartTooltip,
-  ChartTooltipContent,
 } from "@/components/ui/chart"
 
 interface FacilitiesByRegionPieChartProps {
@@ -56,12 +56,8 @@ const EditableTitle: React.FC<EditableTitleProps> = ({
   const [error, setError] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Fetch title from database on mount
-  useEffect(() => {
-    fetchTitle();
-  }, [titleId]);
-
-  const fetchTitle = async () => {
+  // Use useCallback to fix the missing dependency warning
+  const fetchTitle = useCallback(async () => {
     setIsLoading(true);
     setError('');
     
@@ -72,13 +68,17 @@ const EditableTitle: React.FC<EditableTitleProps> = ({
           'Content-Type': 'application/json',
         },
       });
+
       const result = await response.json();
+
       if (!response.ok || !result.success) {
         throw new Error(result.error || `Failed to fetch title`);
       }
+
       const fetchedTitle = result.data.name;
       setTitle(fetchedTitle);
       setTempTitle(fetchedTitle);
+
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to load title';
       setError(errorMessage);
@@ -87,7 +87,12 @@ const EditableTitle: React.FC<EditableTitleProps> = ({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [titleId]);
+
+  // Fetch title from database on mount
+  useEffect(() => {
+    fetchTitle();
+  }, [fetchTitle]);
 
   // Focus input when editing starts
   useEffect(() => {
@@ -114,12 +119,15 @@ const EditableTitle: React.FC<EditableTitleProps> = ({
       setError('Title cannot be empty');
       return;
     }
+
     if (tempTitle === title) {
       setIsEditing(false);
       return;
     }
+
     setIsSaving(true);
     setError('');
+
     try {
       const response = await fetch(`/api/chart-titles/${titleId}`, {
         method: 'PUT',
@@ -130,13 +138,17 @@ const EditableTitle: React.FC<EditableTitleProps> = ({
           name: tempTitle.trim()
         }),
       });
+
       const result = await response.json();
+
       if (!response.ok || !result.success) {
         throw new Error(result.error || `HTTP error! status: ${response.status}`);
       }
+
       // Success - update UI
       setTitle(tempTitle.trim());
       setIsEditing(false);
+
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update title');
       console.error('Save error:', err);
@@ -235,10 +247,18 @@ const EditableTitle: React.FC<EditableTitleProps> = ({
   );
 };
 
-// Custom tooltip component to show percentages
-const CustomTooltip: React.FC<TooltipProps<any, any>> = ({ active, payload }) => {
+// Define proper types for the tooltip payload
+interface ChartDataItem {
+  browser: string;
+  visitors: number;
+  percentage: number;
+  fill: string;
+}
+
+// Custom tooltip component to show percentages with proper typing
+const CustomTooltip: React.FC<TooltipProps<number, string>> = ({ active, payload }) => {
   if (active && payload && payload.length) {
-    const data = payload[0].payload;
+    const data = payload[0].payload as ChartDataItem;
     return (
       <div className="bg-background border border-border rounded-md shadow-md p-3">
         <p className="font-medium text-foreground">{data.browser}</p>
@@ -253,7 +273,7 @@ export function FacilitiesByRegionPieChart({ data, chartTitleId }: FacilitiesByR
   // Calculate total for percentage calculation
   const total = Object.values(data).reduce((sum, value) => sum + value, 0);
   
-  const chartData = Object.entries(data).map(([region, count], index) => {
+  const chartData: ChartDataItem[] = Object.entries(data).map(([region, count], index) => {
     // Calculate percentage
     const percentage = total > 0 ? (count / total) * 100 : 0;
     

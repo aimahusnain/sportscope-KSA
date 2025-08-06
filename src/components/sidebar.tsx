@@ -10,10 +10,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Label } from "@/components/ui/label"
-import { Building2, ChevronDown, MapPin, Building, PanelLeftClose, PanelLeft, Filter } from 'lucide-react'
-import * as React from "react"
 import { useFilters } from "@/contexts/filter-context"
-import { regionNames } from "@/lib/dashboard-data" // Import regionNames
+import { Building, Building2, ChevronDown, Filter, MapPin, PanelLeft, PanelLeftClose } from 'lucide-react'
+import * as React from "react"
 
 const locationTypes = [
   { value: "Urban", icon: Building, label: "Urban" },
@@ -27,7 +26,6 @@ type SidebarProps = {
 
 export default function Sidebar({ sports, facilityTypes }: SidebarProps) {
   const [isOpen, setIsOpen] = React.useState(false)
-  const [showButton, setShowButton] = React.useState(true)
 
   const {
     selectedSports,
@@ -71,16 +69,16 @@ export default function Sidebar({ sports, facilityTypes }: SidebarProps) {
     return () => window.removeEventListener("resize", checkScreenSize)
   }, [])
 
-  React.useEffect(() => {
-    if (isOpen) {
-      setShowButton(false)
-    } else {
-      const timer = setTimeout(() => {
-        setShowButton(true)
-      }, 300)
-      return () => clearTimeout(timer)
-    }
-  }, [isOpen])
+  // React.useEffect(() => {
+  //   if (isOpen) {
+  //     setShowButton(false)
+  //   } else {
+  //     const timer = setTimeout(() => {
+  //       setShowButton(true)
+  //     }, 300)
+  //     return () => clearTimeout(timer)
+  //   }
+  // }, [isOpen])
 
   const toggleSidebar = () => setIsOpen(!isOpen)
 
