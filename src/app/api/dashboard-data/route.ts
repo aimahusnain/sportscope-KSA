@@ -1,3 +1,4 @@
+// app/api/dashboard-data/route.ts
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import type { KSARegion } from "@prisma/client"
@@ -46,9 +47,6 @@ interface WhereClause {
   sportIds?: {
     hasSome: string[]
   }
-  locationType?: {
-    in: string[]
-  }
   ministryOfSports?: boolean
   id?: string
 }
@@ -60,7 +58,7 @@ export async function GET(request: Request) {
     const regionIdParam = searchParams.get("region")
     const page = Number.parseInt(searchParams.get("page") || "1")
     const limit = Number.parseInt(searchParams.get("limit") || "100")
-
+    
     // Parse array parameters correctly
     const sports = searchParams.getAll("sports").filter(Boolean)
     const facilityTypes = searchParams.getAll("facilityTypes").filter(Boolean)
@@ -124,9 +122,7 @@ export async function GET(request: Request) {
           name: true,
         },
       })
-
       console.log("🏃 Found matching sports:", matchingSports)
-
       if (matchingSports.length > 0) {
         const sportIds = matchingSports.map((sport) => sport.id)
         // Now find facilities that have ANY of these sport IDs in their sportIds array
@@ -139,16 +135,16 @@ export async function GET(request: Request) {
       }
     }
 
-    // Location type filter
-    if (locationTypes.length > 0) {
-      whereClause.locationType = {
-        in: locationTypes,
-      }
-    }
-
     // Ministry of Sports filter
     if (ministryOfSports) {
       whereClause.ministryOfSports = true
+    }
+
+    // Note: Location types filter would need to be implemented based on your schema
+    // For now, we'll just log it but not apply any filtering
+    if (locationTypes.length > 0) {
+      console.log("🏢 Location types filter requested but not implemented:", locationTypes)
+      // TODO: Implement location types filtering when the schema supports it
     }
 
     console.log("🔎 Prisma where clause:", JSON.stringify(whereClause, null, 2))
@@ -185,7 +181,6 @@ export async function GET(request: Request) {
         skip: (page - 1) * limit,
         take: limit,
       }),
-
       // Get facility types count from filtered results
       prisma.facility.groupBy({
         by: ["facilityTypeId"],
@@ -199,7 +194,6 @@ export async function GET(request: Request) {
           id: true,
         },
       }),
-
       // Get all facilities with their sports for counting (filtered)
       prisma.facility.findMany({
         where: whereClause,
@@ -212,7 +206,6 @@ export async function GET(request: Request) {
           },
         },
       }),
-
       // Get region distribution from filtered results
       prisma.facility.groupBy({
         by: ["region"],
@@ -221,12 +214,10 @@ export async function GET(request: Request) {
           id: true,
         },
       }),
-
       // Total count of filtered facilities
       prisma.facility.count({
         where: whereClause,
       }),
-
       // Average rating of filtered facilities
       prisma.facility.aggregate({
         where: {
@@ -239,10 +230,8 @@ export async function GET(request: Request) {
           rating: true,
         },
       }),
-
       // Total unique sports count (overall)
       prisma.sport.count(),
-
       // Total regions count from filtered results
       prisma.facility
         .groupBy({

@@ -1,10 +1,9 @@
 "use client"
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Edit3, Check, X, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Pie, PieChart } from "recharts"
+import { Pie, PieChart, TooltipProps } from "recharts"
 import {
   Card,
   CardContent,
@@ -73,17 +72,13 @@ const EditableTitle: React.FC<EditableTitleProps> = ({
           'Content-Type': 'application/json',
         },
       });
-
       const result = await response.json();
-
       if (!response.ok || !result.success) {
         throw new Error(result.error || `Failed to fetch title`);
       }
-
       const fetchedTitle = result.data.name;
       setTitle(fetchedTitle);
       setTempTitle(fetchedTitle);
-
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to load title';
       setError(errorMessage);
@@ -119,15 +114,12 @@ const EditableTitle: React.FC<EditableTitleProps> = ({
       setError('Title cannot be empty');
       return;
     }
-
     if (tempTitle === title) {
       setIsEditing(false);
       return;
     }
-
     setIsSaving(true);
     setError('');
-
     try {
       const response = await fetch(`/api/chart-titles/${titleId}`, {
         method: 'PUT',
@@ -138,17 +130,13 @@ const EditableTitle: React.FC<EditableTitleProps> = ({
           name: tempTitle.trim()
         }),
       });
-
       const result = await response.json();
-
       if (!response.ok || !result.success) {
         throw new Error(result.error || `HTTP error! status: ${response.status}`);
       }
-
       // Success - update UI
       setTitle(tempTitle.trim());
       setIsEditing(false);
-
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update title');
       console.error('Save error:', err);
@@ -247,18 +235,41 @@ const EditableTitle: React.FC<EditableTitleProps> = ({
   );
 };
 
+// Custom tooltip component to show percentages
+const CustomTooltip: React.FC<TooltipProps<any, any>> = ({ active, payload }) => {
+  if (active && payload && payload.length) {
+    const data = payload[0].payload;
+    return (
+      <div className="bg-background border border-border rounded-md shadow-md p-3">
+        <p className="font-medium text-foreground">{data.browser}</p>
+        <p className="text-muted-foreground">{data.percentage}%</p>
+      </div>
+    );
+  }
+  return null;
+};
+
 export function FacilitiesByRegionPieChart({ data, chartTitleId }: FacilitiesByRegionPieChartProps) {
-  const chartData = Object.entries(data).map(([region, count], index) => ({
-    browser: formatRegionName(region),
-    visitors: count,
-    fill: chartColors[index % chartColors.length],
-  }))
+  // Calculate total for percentage calculation
+  const total = Object.values(data).reduce((sum, value) => sum + value, 0);
+  
+  const chartData = Object.entries(data).map(([region, count], index) => {
+    // Calculate percentage
+    const percentage = total > 0 ? (count / total) * 100 : 0;
+    
+    return {
+      browser: formatRegionName(region),
+      visitors: count,
+      percentage: parseFloat(percentage.toFixed(1)), // Round to 1 decimal place
+      fill: chartColors[index % chartColors.length],
+    };
+  });
 
   const chartConfig: ChartConfig = {
     visitors: {
       label: "Facilities",
     },
-  }
+  };
 
   return (
     <Card className="flex w-full h-full flex-col max-w-[400px]">
@@ -275,11 +286,20 @@ export function FacilitiesByRegionPieChart({ data, chartTitleId }: FacilitiesByR
           className="[&_.recharts-pie-label-text]:fill-foreground mx-auto aspect-square h-[300px] mt-[40px] pb-0"
         >
           <PieChart>
-            <ChartTooltip content={<ChartTooltipContent hideLabel />} />
-            <Pie data={chartData} dataKey="visitors" label nameKey="browser" />
+            <ChartTooltip 
+              content={<CustomTooltip />} 
+              formatter={(value) => [`${value}%`, 'Percentage']} 
+            />
+            <Pie 
+              data={chartData} 
+              dataKey="visitors" 
+              nameKey="browser"
+              label={({ percentage }) => `${percentage}%`}
+              labelLine={false}
+            />
           </PieChart>
         </ChartContainer>
       </CardContent>
     </Card>
-  )
+  );
 }

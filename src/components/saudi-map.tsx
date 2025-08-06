@@ -1,5 +1,5 @@
+// components/InteractiveSaudiMap.tsx
 "use client"
-
 import { useState, useRef, useEffect, useCallback } from "react"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -16,7 +16,6 @@ const regionNames: Record<string, string> = regionsData.regions.reduce(
   },
   {} as Record<string, string>,
 )
-
 
 // Beautiful, harmonious color palette - soft and professional
 const regionColors: Record<string, { base: string; hover: string }> = {
@@ -60,24 +59,24 @@ export default function InteractiveSaudiMap() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const svgRef = useRef<SVGSVGElement>(null)
-
+  
   // Get filters from context
   const {
     selectedSports,
     selectedFacilityTypes,
     selectedLocationTypes,
     ministryOfSports,
+    selectedRegions,
     clearAllFilters,
-    setSelectedLocationTypes, // Function to update selectedLocationTypes
+    setSelectedRegions, // Function to update selectedRegions
   } = useFilters()
 
   const getDisplayFacilityCount = (regionId: string) => {
-  if (selectedLocationTypes.length === 1 && selectedLocationTypes[0] !== regionId) {
-    return ""
+    if (selectedRegions.length === 1 && selectedRegions[0] !== regionId) {
+      return ""
+    }
+    return facilityData[regionId] || ""
   }
-  return facilityData[regionId] || ""
-}
-
 
   // Fetch facility statistics from server with filters
   const fetchRegionStats = useCallback(async () => {
@@ -94,6 +93,9 @@ export default function InteractiveSaudiMap() {
       }
       if (selectedLocationTypes.length > 0) {
         params.append("locationTypes", selectedLocationTypes.join(","))
+      }
+      if (selectedRegions.length > 0) {
+        params.append("region", selectedRegions[0]) // Pass the first selected region
       }
       if (ministryOfSports) {
         params.append("ministryOfSports", "true")
@@ -130,7 +132,7 @@ export default function InteractiveSaudiMap() {
     } finally {
       setIsLoading(false)
     }
-  }, [selectedSports, selectedFacilityTypes, selectedLocationTypes, ministryOfSports])
+  }, [selectedSports, selectedFacilityTypes, selectedLocationTypes, selectedRegions, ministryOfSports])
 
   // Fetch data when filters change
   useEffect(() => {
@@ -141,13 +143,13 @@ export default function InteractiveSaudiMap() {
   const handleRegionClick = useCallback(
     (regionId: string) => {
       // If the clicked region is already selected, deselect it. Otherwise, select it.
-      if (selectedLocationTypes.includes(regionId)) {
-        setSelectedLocationTypes([]) // Deselect
+      if (selectedRegions.includes(regionId)) {
+        setSelectedRegions([]) // Deselect
       } else {
-        setSelectedLocationTypes([regionId]) // Select this region
+        setSelectedRegions([regionId]) // Select this region
       }
     },
-    [selectedLocationTypes, setSelectedLocationTypes],
+    [selectedRegions, setSelectedRegions],
   )
 
   // Function to handle SVG initialization and add event listeners
@@ -160,6 +162,7 @@ export default function InteractiveSaudiMap() {
       setActiveRegion(target.id)
       setShowTooltip(true)
     }
+
     const handleMouseMove = (e: Event) => {
       const svgRect = svgRef.current!.getBoundingClientRect()
       setTooltipPosition({
@@ -167,10 +170,12 @@ export default function InteractiveSaudiMap() {
         y: (e as MouseEvent).clientY - svgRect.top,
       })
     }
+
     const handleMouseLeave = () => {
       setShowTooltip(false)
       setActiveRegion(null)
     }
+
     const handleClick = (e: Event) => {
       const target = e.target as SVGPathElement
       handleRegionClick(target.id)
@@ -212,6 +217,7 @@ export default function InteractiveSaudiMap() {
     selectedSports.length > 0 ||
     selectedFacilityTypes.length > 0 ||
     selectedLocationTypes.length > 0 ||
+    selectedRegions.length > 0 ||
     ministryOfSports
 
   // Loading state
@@ -334,9 +340,8 @@ export default function InteractiveSaudiMap() {
                   d={region.path}
                   role="button"
                   tabIndex={0}
-
-                  onClick={() => handleRegionClick(region.id)} // Add onClick handler
-                >-
+                  onClick={() => handleRegionClick(region.id)}
+                >
                   <title>
                     {region.name} - {facilityData[region.id] || 0} facilities
                   </title>
@@ -365,11 +370,9 @@ export default function InteractiveSaudiMap() {
             <div className="flex items-center justify-between">
               <h3 className="font-semibold text-base">Facilities Per Region</h3>
               <div className="flex items-center gap-2">
-          
-  <Badge variant="secondary" className="text-xs">
-   {totalFacilities}
-  </Badge>
-
+                <Badge variant="secondary" className="text-xs">
+                  {totalFacilities}
+                </Badge>
               </div>
             </div>
             <div className="space-y-1 mt-3">
@@ -383,48 +386,31 @@ export default function InteractiveSaudiMap() {
                   <div
                     key={id}
                     className={`flex items-center gap-2 p-1.5 rounded-md transition-all duration-200 cursor-pointer hover:bg-muted/50 ${
-                      activeRegion === id || selectedLocationTypes.includes(id) ? "bg-muted ring-1 ring-primary/20" : ""
+                      activeRegion === id || selectedRegions.includes(id) ? "bg-muted ring-1 ring-primary/20" : ""
                     }`}
                     onMouseEnter={() => setActiveRegion(id)}
                     onMouseLeave={() => setActiveRegion(null)}
-                    onClick={() => handleRegionClick(id)} // Add onClick handler
+                    onClick={() => handleRegionClick(id)}
                   >
                     <div
                       className="w-3 h-3 rounded-full border border-white shadow-sm transition-all duration-200"
                       style={{
                         backgroundColor: regionColors[id].base,
                         transform:
-                          activeRegion === id || selectedLocationTypes.includes(id) ? "scale(1.1)" : "scale(1)",
+                          activeRegion === id || selectedRegions.includes(id) ? "scale(1.1)" : "scale(1)",
                       }}
                     />
                     <span
                       className={`text-xs font-medium transition-colors duration-200 flex-1 truncate ${
-                        activeRegion === id || selectedLocationTypes.includes(id) ? "text-primary" : "text-foreground"
+                        activeRegion === id || selectedRegions.includes(id) ? "text-primary" : "text-foreground"
                       }`}
                     >
                       {name}
                     </span>
                     <div className="flex items-center gap-1">
-<div title="Total number of facilities">
-<span className="text-xs text-muted-foreground font-medium">{getDisplayFacilityCount(id)}</span>
+                      <div title="Total number of facilities">
+                        <span className="text-xs text-muted-foreground font-medium">{getDisplayFacilityCount(id)}</span>
                       </div>
-                      {/* I need no. of facilities instead of Sa-... */}
-                      {/* <Badge
-                        variant="outline"
-                        className="text-xs px-1.5 py-0 h-5"
-                        style={{
-                          borderColor:
-                            activeRegion === id || selectedLocationTypes.includes(id)
-                              ? regionColors[id].base
-                              : undefined,
-                          color:
-                            activeRegion === id || selectedLocationTypes.includes(id)
-                              ? regionColors[id].base
-                              : undefined,
-                        }}
-                      >
-                        {id.replace("SA-", "")}
-                      </Badge> */}
                     </div>
                   </div>
                 ))}
