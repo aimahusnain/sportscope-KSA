@@ -1,5 +1,4 @@
 "use client"
-
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -11,17 +10,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Label } from "@/components/ui/label"
-import {
-  Building2,
-  ChevronDown,
-  MapPin,
-  Building,
-  PanelLeftClose,
-  PanelLeft,
-  Filter,
-} from "lucide-react"
+import { Building2, ChevronDown, MapPin, Building, PanelLeftClose, PanelLeft, Filter } from 'lucide-react'
 import * as React from "react"
 import { useFilters } from "@/contexts/filter-context"
+import { regionNames } from "@/lib/dashboard-data" // Import regionNames
 
 const locationTypes = [
   { value: "Urban", icon: Building, label: "Urban" },
@@ -36,7 +28,7 @@ type SidebarProps = {
 export default function Sidebar({ sports, facilityTypes }: SidebarProps) {
   const [isOpen, setIsOpen] = React.useState(false)
   const [showButton, setShowButton] = React.useState(true)
-console.log("Sidebar rendered with sports:", showButton,)
+
   const {
     selectedSports,
     selectedFacilityTypes,
@@ -74,7 +66,6 @@ console.log("Sidebar rendered with sports:", showButton,)
         setIsOpen(false)
       }
     }
-
     checkScreenSize()
     window.addEventListener("resize", checkScreenSize)
     return () => window.removeEventListener("resize", checkScreenSize)
@@ -122,11 +113,11 @@ console.log("Sidebar rendered with sports:", showButton,)
     selectedFacilityTypes.length +
     selectedLocationTypes.length +
     (ministryOfSports ? 1 : 0)
+
   return (
     <div className="relative">
       {/* Add top margin on mobile to prevent overlap with filter button */}
       <div className="md:hidden h-16"></div>
-      
       {/* Mobile Filter Button - Fixed at top */}
       {!isOpen && (
         <Button
@@ -145,7 +136,6 @@ console.log("Sidebar rendered with sports:", showButton,)
           )}
         </Button>
       )}
-
       {/* Desktop Toggle Button */}
       <Button
         onClick={toggleSidebar}
@@ -168,31 +158,29 @@ console.log("Sidebar rendered with sports:", showButton,)
           </>
         )}
       </Button>
-
       {/* Mobile Overlay */}
       {isOpen && (
-        <div 
-          className="fixed inset-0 bg-black/50 z-[35] md:hidden" 
-          onClick={toggleSidebar} 
-          aria-hidden="true" 
+        <div
+          className="fixed inset-0 bg-black/50 z-[35] md:hidden"
+          onClick={toggleSidebar}
+          aria-hidden="true"
         />
       )}
-
       {/* Sidebar */}
       <div
         className={`
-          fixed md:sticky 
-          top-16 md:top-16 
-          left-0 
+          fixed md:sticky
+          top-16 md:top-16
+          left-0
           h-full md:h-[calc(100vh-64px)]
           w-80 max-w-[85vw] md:max-w-none
-          border-r border-border/40 
+          border-r border-border/40
           bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80
           z-[40] md:z-auto
-          transition-all duration-300 ease-in-out 
+          transition-all duration-300 ease-in-out
           overflow-y-auto
-          ${isOpen 
-            ? "translate-x-0 md:translate-x-0 md:w-80" 
+          ${isOpen
+            ? "translate-x-0 md:translate-x-0 md:w-80"
             : "-translate-x-full md:translate-x-0 md:w-0"
           }
         `}
@@ -210,12 +198,8 @@ console.log("Sidebar rendered with sports:", showButton,)
             <PanelLeftClose className="h-4 w-4" />
           </Button>
         </div>
-
         <div className={`p-4 sm:p-6 space-y-4 sm:space-y-6 ${isOpen ? 'block' : 'hidden md:block'}`}>
-  
-
-
-        {/* FACILITY TYPES */}
+          {/* FACILITY TYPES */}
           <Card className="border-0 shadow-sm bg-card/50">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-base font-semibold flex items-center gap-2 text-black dark:text-white">
@@ -229,7 +213,6 @@ console.log("Sidebar rendered with sports:", showButton,)
                   </Badge>
                 )}
               </CardTitle>
-
               <button
                 className="text-xs text-lime-600 hover:underline"
                 onClick={() =>
@@ -286,8 +269,8 @@ console.log("Sidebar rendered with sports:", showButton,)
               </DropdownMenu>
             </CardContent>
           </Card>
-        {/* Sports Selection */}
-    <Card className="border-0 shadow-sm bg-card/50">
+          {/* Sports Selection */}
+          <Card className="border-0 shadow-sm bg-card/50">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-base font-semibold flex items-center gap-2 text-black dark:text-white">
                 Sports
@@ -300,7 +283,6 @@ console.log("Sidebar rendered with sports:", showButton,)
                   </Badge>
                 )}
               </CardTitle>
-
               <button
                 className="text-xs text-lime-600 hover:underline"
                 onClick={() =>
@@ -357,7 +339,6 @@ console.log("Sidebar rendered with sports:", showButton,)
               </DropdownMenu>
             </CardContent>
           </Card>
-
           {/* Location Type Selection */}
           <Card className="border-0 shadow-sm bg-card/50">
             <CardHeader>
@@ -404,7 +385,6 @@ console.log("Sidebar rendered with sports:", showButton,)
               </div>
             </CardContent>
           </Card>
-
           {/* Ministry of Sports */}
           <Card className="border-0 shadow-sm bg-card/50">
             <CardContent>

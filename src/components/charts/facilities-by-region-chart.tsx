@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Edit3, Check, X, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts"
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Cell, LabelList } from "recharts"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { type ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import type { KSARegion } from "@prisma/client"
@@ -13,6 +13,15 @@ interface FacilitiesByRegionChartProps {
   data: Record<KSARegion, number>
   chartTitleId: string // Required - MongoDB ObjectID of existing chart title
 }
+
+// Add the same colorful chart colors from FacilityTypesChart
+const chartColors = [
+  "var(--chart-1)",
+  "var(--chart-2)",
+  "var(--chart-3)",
+  "var(--chart-4)",
+  "var(--chart-5)",
+]
 
 const chartConfig = {
   facilities: {
@@ -237,9 +246,11 @@ const EditableTitle: React.FC<EditableTitleProps> = ({
 };
 
 export function FacilitiesByRegionChart({ data, chartTitleId }: FacilitiesByRegionChartProps) {
-  const chartData = Object.entries(data).map(([region, count]) => ({
+  // Transform data with colors like FacilityTypesChart
+  const chartData = Object.entries(data).map(([region, count], index) => ({
     region: formatRegionName(region),
     facilities: count,
+    fill: chartColors[index % chartColors.length], // Add individual colors for each bar
   }))
 
   return (
@@ -262,7 +273,7 @@ export function FacilitiesByRegionChart({ data, chartTitleId }: FacilitiesByRegi
               left: 20,
             }}
           >
-            <CartesianGrid vertical={false} />
+            <CartesianGrid stroke="var(--border)" vertical={false} />
             <XAxis
               dataKey="region"
               tickLine={false}
@@ -272,10 +283,29 @@ export function FacilitiesByRegionChart({ data, chartTitleId }: FacilitiesByRegi
               textAnchor="end"
               height={60}
               fontSize={12}
+              tick={{ fill: "currentColor" }}
             />
-            <YAxis tickLine={false} axisLine={false} tickMargin={10} fontSize={12} />
+            <YAxis 
+              allowDecimals={false}
+              tickLine={false} 
+              axisLine={false} 
+              tickMargin={10} 
+              fontSize={12}
+              tick={{ fill: "currentColor" }}
+            />
             <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
-            <Bar dataKey="facilities" fill="var(--color-facilities)" radius={6} />
+            <Bar dataKey="facilities" radius={[7, 7, 0, 0]}>
+              {/* Add LabelList to show values on top of bars */}
+              <LabelList
+                dataKey="facilities"
+                position="top"
+                fill="var(--foreground)"
+              />
+              {/* Add Cell components to apply individual colors */}
+              {chartData.map((d, i) => (
+                <Cell key={i} fill={d.fill} />
+              ))}
+            </Bar>
           </BarChart>
         </ChartContainer>
       </CardContent>
