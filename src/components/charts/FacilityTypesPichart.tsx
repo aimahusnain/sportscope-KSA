@@ -1,5 +1,5 @@
 "use client"
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Edit3, Check, X, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,7 +15,6 @@ import {
   ChartConfig,
   ChartContainer,
   ChartTooltip,
-  ChartTooltipContent,
 } from "@/components/ui/chart"
 
 interface FacilityPieChartProps {
@@ -50,11 +49,7 @@ const EditableTitle: React.FC<EditableTitleProps> = ({
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Fetch title from database on mount
-  useEffect(() => {
-    fetchTitle();
-  }, [titleId]);
-
-  const fetchTitle = async () => {
+  const fetchTitle = useCallback(async () => {
     setIsLoading(true);
     setError('');
     
@@ -80,7 +75,11 @@ const EditableTitle: React.FC<EditableTitleProps> = ({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [titleId]);
+
+  useEffect(() => {
+    fetchTitle();
+  }, [fetchTitle]);
 
   // Focus input when editing starts
   useEffect(() => {
@@ -228,10 +227,18 @@ const EditableTitle: React.FC<EditableTitleProps> = ({
   );
 };
 
+// Define proper types for the tooltip payload
+interface ChartDataItem {
+  browser: string;
+  visitors: number;
+  percentage: number;
+  fill: string;
+}
+
 // Custom tooltip component to show percentages
-const CustomTooltip: React.FC<TooltipProps<any, any>> = ({ active, payload }) => {
+const CustomTooltip: React.FC<TooltipProps<number, string>> = ({ active, payload }) => {
   if (active && payload && payload.length) {
-    const data = payload[0].payload;
+    const data = payload[0].payload as ChartDataItem;
     return (
       <div className="bg-background border border-border rounded-md shadow-md p-3">
         <p className="font-medium text-foreground">{data.browser}</p>
@@ -246,7 +253,7 @@ export function ChartPieLabel({ data, chartTitleId }: FacilityPieChartProps) {
   // Calculate total for percentage calculation
   const total = Object.values(data).reduce((sum, value) => sum + value, 0);
   
-  const chartData = Object.entries(data).map(([type, count], index) => {
+  const chartData: ChartDataItem[] = Object.entries(data).map(([type, count], index) => {
     // Calculate percentage
     const percentage = total > 0 ? (count / total) * 100 : 0;
     
