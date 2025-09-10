@@ -76,6 +76,11 @@ export default function Header() {
                     Data Manager
                   </Link>
                 </Button>
+                <Button asChild size="sm" variant="outline">
+                  <Link href="/gap-prioritization-step-1" className="text-sm font-medium">
+                    Gap Prioritization (Step 1) Multi Criteria Analysis
+                  </Link>
+                </Button>
               </nav>
             </div>
 
@@ -176,6 +181,14 @@ export default function Header() {
                         onClick={() => setIsOpen(false)}
                       >
                         <Link href="/data-manager">Data Manager</Link>
+                      </Button>
+                      <Button
+                        asChild
+                        variant="ghost"
+                        className="justify-start h-12 text-base px-4 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                        onClick={() => setIsOpen(false)}
+                      >
+                        <Link href="/data-manager">Gap Prioritization (Step 1) <br /> Multi Criteria Analysis</Link>
                       </Button>
                     </nav>
                     {/* Mobile Actions - Bottom Section */}
